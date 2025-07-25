@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import LoginPage from "../pages/auth/LoginPage";
+import ConfirmAccountPage from "../pages/auth/ConfirmAccountPage.js";
 
 import AdminDashboard from "../pages/admin/dashboard";
 import UserPage from "../pages/admin/UsersPage";
@@ -19,6 +20,8 @@ const AppRouter = () => {
       <Routes>
         {/* Public routes */}
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/konfirmasi-akun" element={<ConfirmAccountPage />} />
+
 
         {/* Protected routes */}
         <Route element={<ProtectedRouteByRole allowedRole="admin" />}>
