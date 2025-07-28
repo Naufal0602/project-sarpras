@@ -1,15 +1,57 @@
-import React, { useState } from "react";
-import { Users, Search, ChevronDown, Menu, X } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import {
+  Users,
+  Search,
+  ChevronDown,
+  Menu,
+  X,
+  Clock,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import LogoutButton from "./LogoutButton";
+
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+} from "firebase/firestore";
+import { db } from "../services/firebase"; // pastikan path ini sesuai
+import LogoutModal from './LogoutModal';
+
 
 const Sidebar = () => {
   const [activeItem, setActiveItem] = useState("Campaign Funds");
   const [searchQuery, setSearchQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
+
+  // Dengarkan jumlah pending user real-time
+  useEffect(() => {
+    const q = query(
+      collection(db, "pending_users"),
+      where("status", "==", "pending")
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setPendingCount(snapshot.size);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const menuItems = [
-    { name: "Kelola Daftar Pengguna", icon: Users, to: "/admin/users" },
+    {
+      name: "Kelola Daftar Pengguna",
+      icon: Users,
+      to: "/admin/users",
+    },
+    {
+      name: "Pending Users",
+      icon: Clock,
+      to: "/admin/pending-users",
+      badge: pendingCount, // tambahkan badge di sini
+    },
   ];
 
   const toggleSidebar = () => {
@@ -38,12 +80,10 @@ const Sidebar = () => {
 
       {/* Sidebar */}
       <div
-        className={`
-  fixed md:translate-x-0 lg:relative z-40
-  w-64 bg-gradient-to-b from-orange-400 to-orange-500 shadow-lg
-  h-full transition-transform duration-300 ease-in-out
-  ${isOpen ? "translate-x-0" : "translate-x-[-100%] md:translate-x-0"}
-`}
+        className={`fixed md:translate-x-0 lg:relative z-40
+        w-64 bg-gradient-to-b from-orange-400 to-orange-500 shadow-lg
+        h-full transition-transform duration-300 ease-in-out
+        ${isOpen ? "translate-x-0" : "translate-x-[-100%] md:translate-x-0"}`}
       >
         {/* Header */}
         <div className="p-6">
@@ -74,23 +114,31 @@ const Sidebar = () => {
                     setIsOpen(false);
                   }
                 }}
-                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg mb-1 transition-all duration-200 ${
+                className={`w-full flex items-center justify-between px-4 py-3 rounded-lg mb-1 transition-all duration-200 ${
                   isActive
                     ? "bg-white bg-opacity-20 text-white shadow-lg"
                     : "text-orange-100 hover:bg-white hover:bg-opacity-10 hover:text-white"
                 }`}
               >
-                <Icon className="w-5 h-5" />
-                <span className="font-medium">{item.name}</span>
+                <div className="flex items-center space-x-3">
+                  <Icon className="w-5 h-5" />
+                  <span className="font-medium">{item.name}</span>
+                </div>
+                {item.badge > 0 && (
+                  <span className="bg-white text-orange-500 text-xs rounded-full px-2 py-0.5">
+                    {item.badge}
+                  </span>
+                )}
               </Link>
             );
           })}
         </nav>
 
         {/* Bottom User Section */}
-        <div className="absolute bottom-6 left-6 right-6">
-          <div className="flex  items-center space-x-3 p-3 bg-white bg-opacity-10 rounded-lg">
-          <LogoutButton />
+        <div className="absolute bottom-6 left-6 right-6 justify-center">
+          <div className="flex items-center justify-center space-x-3">
+            {/* <LogoutButton /> */}
+            <LogoutModal />
           </div>
         </div>
       </div>

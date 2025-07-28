@@ -3,6 +3,7 @@ import { auth, db } from "../../services/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -13,21 +14,16 @@ const LoginPage = () => {
     const userData = localStorage.getItem("user");
     if (userData) {
       const user = JSON.parse(userData);
-      switch (user.role) {
-        case "admin":
-          navigate("/admin/dashboard");
-          break;
-        case "user-sd":
-          navigate("/sd/dashboard");
-          break;
-        case "user-paud":
-          navigate("/paud/dashboard");
-          break;
-        case "user-smp":
-          navigate("/smp/dashboard");
-          break;
-        default:
-          console.warn("Role tidak dikenali");
+      if (user.role === "admin") {
+        navigate("/admin/dashboard");
+      } else if (
+        user.role === "user-sd" ||
+        user.role === "user-paud" ||
+        user.role === "user-smp"
+      ) {
+        navigate("/user/dashboard");
+      } else {
+        console.warn("Role tidak dikenali");
       }
     }
   }, [navigate]);
@@ -35,7 +31,11 @@ const LoginPage = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
       const user = userCredential.user;
 
       const userDocRef = doc(db, "users", user.uid);
@@ -50,13 +50,9 @@ const LoginPage = () => {
             navigate("/admin/dashboard");
             break;
           case "user-sd":
-            navigate("/sd/dashboard");
-            break;
           case "user-paud":
-            navigate("/paud/dashboard");
-            break;
           case "user-smp":
-            navigate("/smp/dashboard");
+            navigate("/user/dashboard");
             break;
           default:
             alert("Role tidak dikenali");
@@ -76,7 +72,10 @@ const LoginPage = () => {
       <div className="absolute w-[400px] h-[400px] bg-blue-400 rounded-[50%] bottom-[-100px] right-[-100px] opacity-40"></div>
 
       {/* Login Card */}
-      <div className="bg-white shadow-2xl rounded-3xl p-10 w-full max-w-sm z-10 text-center " style={{ margin: '25px' }}>
+      <div
+        className="bg-white shadow-2xl rounded-3xl p-10 w-full max-w-sm z-10 text-center "
+        style={{ margin: "25px" }}
+      >
         <h1 className="text-3xl font-bold mb-2">Login</h1>
         <p className="text-sm text-gray-500 mb-8">Selamat datang kembali!</p>
         <form onSubmit={handleLogin} className="space-y-5 text-left">
@@ -103,6 +102,20 @@ const LoginPage = () => {
               <span className="absolute right-3 top-3 text-gray-400 cursor-pointer">
                 👁️
               </span>
+            </div>
+            <div className="flex flex-col items-center mt-4 w-full">
+              <Link
+                to="/lupa-password"
+                className="text-sm text-orange-600 hover:underline"
+              >
+                Lupa Password?
+              </Link>
+              <Link
+                to="/register"
+                className="text-sm text-orange-600 hover:underline"
+              >
+                Belum Punya Akun? Daftar sekarang
+              </Link>
             </div>
           </div>
           <button

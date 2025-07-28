@@ -411,7 +411,7 @@ const AdminUserListPage = () => {
           <h2 className="text-xl md:text-2xl font-bold text-gray-800">
             Daftar User
           </h2>
-          <div class="flex justify-between items-center gap-2">
+          <div className="flex justify-between items-center gap-2">
             <Link to="/admin/users/register">
               <button className="bg-green-500 text-white px-4 py-2 rounded-md w-full md:w-auto">
                 + Tambah Pengguna

@@ -1,19 +1,62 @@
-import React, { useState } from 'react';
-import { 
-  Users,  
+import React, { useState, useEffect } from "react";
+import {
+  Users,
   Search,
   ChevronDown,
   Menu,
-  X
-} from 'lucide-react';
+  X,
+  Building,
+  BicepsFlexed 
+} from "lucide-react";
+import { Link } from "react-router-dom";
+import LogoutButton from "./LogoutButton";
+
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+} from "firebase/firestore";
+import { db } from "../services/firebase"; // pastikan path ini sesuai
+import LogoutModal from './LogoutModal';
+
 
 const Sidebar = () => {
-  const [activeItem, setActiveItem] = useState('Campaign Funds');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [activeItem, setActiveItem] = useState("Campaign Funds");
+  const [searchQuery, setSearchQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
+
+  // Dengarkan jumlah pending user real-time
+  useEffect(() => {
+    const q = query(
+      collection(db, "pending_users"),
+      where("status", "==", "pending")
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setPendingCount(snapshot.size);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const menuItems = [
-    { name: 'Perusahaan', icon: Users },
+    {
+      name: "Profil",
+      icon: Users,
+      to: "/user/profil",
+    },
+    {
+      name: "Perusahaan",
+      icon: Building,
+      to: "/user/perusahaan/",
+    },
+    {
+      name: "Pekerjaan Fisik",
+      icon: BicepsFlexed ,
+      to: "/user/pekerjaan-fisik",
+    },
   ];
 
   const toggleSidebar = () => {
@@ -25,7 +68,9 @@ const Sidebar = () => {
       {/* Mobile Menu Button */}
       <button
         onClick={toggleSidebar}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-orange-500 text-white rounded-lg shadow-lg"
+        className={`lg:hidden fixed top-4 md:hidden ${
+          isOpen ? "right-4" : "left-4"
+        } z-50 p-2 bg-orange-500 text-white rounded-lg shadow-lg transition-all duration-300`}
       >
         {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
       </button>
@@ -39,37 +84,22 @@ const Sidebar = () => {
       )}
 
       {/* Sidebar */}
-            <div className={`
-        fixed lg:relative lg:translate-x-0 z-40
+      <div
+        className={`fixed md:translate-x-0 lg:relative z-40
         w-64 bg-gradient-to-b from-orange-400 to-orange-500 shadow-lg
         h-full transition-transform duration-300 ease-in-out
-        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-        `}>
-
+        ${isOpen ? "translate-x-0" : "translate-x-[-100%] md:translate-x-0"}`}
+      >
         {/* Header */}
         <div className="p-6">
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-white rounded flex items-center justify-center">
-              <span className="text-orange-500 font-bold text-sm">T</span>
+              <span className="text-orange-500 font-bold text-sm">D</span>
             </div>
             <div className="text-white">
-              <h1 className="font-bold text-lg">Total People</h1>
+              <h1 className="font-bold text-lg">SARPRAS</h1>
               <p className="text-orange-100 text-xs">Admin</p>
             </div>
-          </div>
-        </div>
-
-        {/* Search Bar */}
-        <div className="px-6 mb-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-orange-200 w-4 h-4" />
-            <input
-              type="text"
-              placeholder="Search"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-orange-300 bg-opacity-30 text-white placeholder-orange-200 rounded-lg py-2 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-20"
-            />
           </div>
         </div>
 
@@ -78,46 +108,45 @@ const Sidebar = () => {
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeItem === item.name;
-            
+
             return (
-              <button
+              <Link
                 key={item.name}
+                to={item.to}
                 onClick={() => {
                   setActiveItem(item.name);
-                  // Close sidebar on mobile after selection
                   if (window.innerWidth < 1024) {
                     setIsOpen(false);
                   }
                 }}
-                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg mb-1 transition-all duration-200 ${
-                  isActive 
-                    ? 'bg-white bg-opacity-20 text-white shadow-lg' 
-                    : 'text-orange-100 hover:bg-white hover:bg-opacity-10 hover:text-white'
+                className={`w-full flex items-center justify-between px-4 py-3 rounded-lg mb-1 transition-all duration-200 ${
+                  isActive
+                    ? "bg-white bg-opacity-20 text-white shadow-lg"
+                    : "text-orange-100 hover:bg-white hover:bg-opacity-10 hover:text-white"
                 }`}
               >
-                <Icon className="w-5 h-5" />
-                <span className="font-medium">{item.name}</span>
-              </button>
+                <div className="flex items-center space-x-3">
+                  <Icon className="w-5 h-5" />
+                  <span className="font-medium">{item.name}</span>
+                </div>
+                {item.badge > 0 && (
+                  <span className="bg-white text-orange-500 text-xs rounded-full px-2 py-0.5">
+                    {item.badge}
+                  </span>
+                )}
+              </Link>
             );
           })}
         </nav>
 
         {/* Bottom User Section */}
-        <div className="absolute bottom-6 left-6 right-6">
-          <div className="flex items-center space-x-3 p-3 bg-white bg-opacity-10 rounded-lg">
-            <div className="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-              <span className="text-white font-semibold text-sm">A</span>
-            </div>
-            <div className="flex-1">
-              <p className="text-white font-medium text-sm">Admin User</p>
-              <p className="text-orange-100 text-xs">admin@totalpeople.com</p>
-            </div>
-            <ChevronDown className="w-4 h-4 text-orange-200" />
+        <div className="absolute bottom-6 left-6 right-6 justify-center">
+          <div className="flex items-center justify-center space-x-3">
+            {/* <LogoutButton /> */}
+            <LogoutModal />
           </div>
         </div>
       </div>
-
-     
     </div>
   );
 };

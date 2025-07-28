@@ -23,7 +23,6 @@ const ADMINDashboard = () => {
         </ul>
       </nav>
     </div>
-      <LogoutButton />
     </div>
   );
 };
