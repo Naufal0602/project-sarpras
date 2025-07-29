@@ -66,17 +66,14 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center relative overflow-hidden">
-      {/* Background Shapes */}
-      <div className="absolute w-[500px] h-[500px] bg-blue-300 rounded-[60%] top-[-100px] left-[-100px] opacity-30"></div>
-      <div className="absolute w-[400px] h-[400px] bg-blue-400 rounded-[50%] bottom-[-100px] right-[-100px] opacity-40"></div>
+    <div className="min-h-screen bg-[url('/bg.png')] bg-cover bg-center bg-no-repeat flex items-center justify-center relative overflow-hidden">
 
       {/* Login Card */}
       <div
         className="bg-white shadow-2xl rounded-3xl p-10 w-full max-w-sm z-10 text-center "
         style={{ margin: "25px" }}
       >
-        <h1 className="text-3xl font-bold mb-2">Login</h1>
+        <h1 className="text-3xl font-bold mb-2 text-orange-600">Login</h1>
         <p className="text-sm text-gray-500 mb-8">Selamat datang kembali!</p>
         <form onSubmit={handleLogin} className="space-y-5 text-left">
           <div>
@@ -120,7 +117,7 @@ const LoginPage = () => {
           </div>
           <button
             type="submit"
-            className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition duration-300"
+            className="w-full bg-orange-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition duration-300"
           >
             Login
           </button>

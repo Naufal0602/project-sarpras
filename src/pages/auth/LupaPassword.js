@@ -39,8 +39,9 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto mt-20 p-6 bg-white rounded shadow">
-      <h2 className="text-xl font-bold mb-4 text-center">Lupa Password</h2>
+    <div className="min-h-screen bg-[url('/bg.png')] bg-cover bg-center bg-no-repeat flex items-center justify-center relative overflow-hidden">
+    <div className="max-w-md mx-auto mt-20 p-6 bg-gray-50 rounded shadow-xl">
+      <h2 className="text-xl font-bold mb-6 text-center text-orange-600">Lupa Password</h2>
 
       <input
         type="email"
@@ -54,13 +55,14 @@ const ForgotPassword = () => {
         onClick={handleReset}
         disabled={loading}
         className={`w-full py-2 rounded font-semibold ${
-          loading ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"
+          loading ? "bg-gray-400" : "bg-orange-600 hover:bg-orange-700"
         } text-white`}
       >
         {loading ? "Mengirim..." : "Kirim Link Reset"}
       </button>
 
       {message && <p className="mt-4 text-center text-sm">{message}</p>}
+    </div>
     </div>
   );
 };

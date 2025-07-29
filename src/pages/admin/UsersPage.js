@@ -283,6 +283,12 @@ const AdminUserListPage = () => {
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-gray-100">
+      
+      {/* Navbar dan Sidebar */}
+      <div className="fixed z-50">
+        <AdminNavbar />
+        <AdminSidebar />
+      </div>
       {showExportModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded-lg max-w-md w-full">
@@ -399,11 +405,6 @@ const AdminUserListPage = () => {
         </div>
       )}
 
-      {/* Navbar dan Sidebar */}
-      <div className="fixed z-50">
-        <AdminNavbar />
-        <AdminSidebar />
-      </div>
 
       {/* Konten Utama */}
       <div className="md:ml-[250px] mt-[60px] p-4 md:p-6 w-full">

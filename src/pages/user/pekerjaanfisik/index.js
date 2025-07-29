@@ -11,14 +11,119 @@ import Navbar from "../../../components/Navbar";
 import Sidebar from "../../../components/SideBar";
 import { Link } from "react-router-dom";
 import DataTable from "react-data-table-component";
+import { PencilLine, Trash2 } from "lucide-react";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const AdminPekerjaanFisikListPage = () => {
   const [pekerjaanList, setPekerjaanList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedBagian, setSelectedBagian] = useState("semua");
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [rangeType, setRangeType] = useState("all"); // 'all' atau 'date'
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+
   const userData = JSON.parse(localStorage.getItem("user"));
   const isLevel2 = userData?.level === 2;
+  const role = userData?.role; // e.g. 'user-smp'
+
+  const bagianUser = role?.includes("user-")
+    ? role.replace("user-", "")
+    : "semua"; // admin lihat semua
+
+  const getFilteredExportData = () => {
+    let data = [...filteredData];
+
+    if (rangeType === "date") {
+      data = data.filter((item) => {
+        const createdAt = item.created_at?.toDate?.();
+        if (!createdAt) return false;
+
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999); // akhir hari
+
+        return createdAt >= start && createdAt <= end;
+      });
+    }
+
+    return data;
+  };
+
+  // Fungsi untuk membuat kode waktu sekarang (ddmmyyyyHHMM)
+  const getFormattedNow = () => {
+    const now = new Date();
+    const pad = (num) => String(num).padStart(2, "0");
+
+    return (
+      pad(now.getDate()) +
+      pad(now.getMonth() + 1) +
+      now.getFullYear() +
+      pad(now.getHours()) +
+      pad(now.getMinutes())
+    );
+  };
+
+  const exportToPDF = () => {
+    const exportData = getFilteredExportData();
+    const doc = new jsPDF();
+    doc.text("Daftar Pekerjaan Fisik", 14, 15);
+
+    const tableColumn = [
+      "Perusahaan",
+      "Jenis Pekerjaan",
+      "Sekolah",
+      "Deskripsi",
+      "Bagian",
+      "Dibuat",
+    ];
+
+    const tableRows = exportData.map((row) => [
+      row.perusahaan_nama || "-",
+      row.jenis_pekerjaan || "-",
+      row.sekolah || "-",
+      row.deskripsi || "-",
+      row.bagian || "-",
+      formatDate(row.created_at),
+    ]);
+
+    // Panggil autoTable langsung dari import
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 20,
+      styles: { fontSize: 8 },
+    });
+
+    doc.save(`DataPekerjaanFisik_${getFormattedNow()}.pdf`);
+    setShowExportModal(false);
+  };
+
+  const exportToExcel = () => {
+    const exportData = getFilteredExportData().map((row) => ({
+      Perusahaan: row.perusahaan_nama || "-",
+      Jenis_Pekerjaan: row.jenis_pekerjaan || "-",
+      Sekolah: row.sekolah || "-",
+      Deskripsi: row.deskripsi || "-",
+      Bagian: row.bagian || "-",
+      Dibuat: formatDate(row.created_at),
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Pekerjaan Fisik");
+
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array",
+    });
+    const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
+    saveAs(blob, `DataPekerjaanFisik_${getFormattedNow()}.xlsx`);
+    setShowExportModal(false);
+  };
 
   const fetchPekerjaan = async () => {
     try {
@@ -28,7 +133,11 @@ const AdminPekerjaanFisikListPage = () => {
           const pekerjaan = docSnap.data();
           let perusahaanNama = "-";
           try {
-            const perusahaanRef = doc(db, "perusahaan", pekerjaan.perusahaan_id);
+            const perusahaanRef = doc(
+              db,
+              "perusahaan",
+              pekerjaan.perusahaan_id
+            );
             const perusahaanDoc = await getDoc(perusahaanRef);
             if (perusahaanDoc.exists()) {
               perusahaanNama = perusahaanDoc.data().nama_perusahaan;
@@ -84,8 +193,18 @@ const AdminPekerjaanFisikListPage = () => {
       sortable: true,
     },
     {
-      name: "Detail Pekerjaan",
-      selector: (row) => row.detail_pekerjaan || "-",
+      name: "Jenis Pekerjaan",
+      selector: (row) => row.jenis_pekerjaan || "-",
+      wrap: true,
+    },
+    {
+      name: "Sekolah",
+      selector: (row) => row.sekolah || "-",
+      wrap: true,
+    },
+    {
+      name: "Deskripsi",
+      selector: (row) => row.deskripsi || "-",
       wrap: true,
       grow: 2,
     },
@@ -104,18 +223,25 @@ const AdminPekerjaanFisikListPage = () => {
           {
             name: "Aksi",
             cell: (row) => (
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Link
                   to={`/user/pekerjaan-fisik/edit/${row.id}`}
-                  className="text-white bg-blue-600 px-3 py-1 rounded text-sm hover:underline"
+                  className="group bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm flex items-center justify-center transition-all duration-300"
                 >
-                  Edit
+                  <span className="group-hover:hidden">
+                    <PencilLine className="w-4 h-4" />
+                  </span>
+                  <span className="hidden group-hover:inline">Ubah</span>
                 </Link>
+
                 <button
                   onClick={() => handleDelete(row.id)}
-                  className="text-white bg-red-600 px-3 py-1 rounded text-sm hover:underline"
+                  className="group bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm flex items-center justify-center transition-all duration-300"
                 >
-                  Hapus
+                  <span className="group-hover:hidden">
+                    <Trash2 className="w-4 h-4" />
+                  </span>
+                  <span className="hidden group-hover:inline">Hapus</span>
                 </button>
               </div>
             ),
@@ -126,52 +252,46 @@ const AdminPekerjaanFisikListPage = () => {
 
   const filteredData = pekerjaanList
     .filter((item) =>
-      selectedBagian === "semua" ? true : item.bagian === selectedBagian
+      bagianUser === "semua" ? true : item.bagian === bagianUser
     )
     .filter((item) =>
       item.perusahaan_nama?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <div className="fixed">
+    <div className="flex min-h-screen">
+      <div className="fixed z-50">
         <Navbar />
         <Sidebar />
       </div>
 
-      <div className="flex-1 md:ml-72 pt-20 p-8 w-full">
-        <div className="flex justify-between mb-4">
+      <div className="flex-1 md:ml-72 pt-20 md:pt-20 xl:pt-20 p-4 sm:p-8 w-full">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
           <h2 className="text-2xl font-bold text-orange-600">
             Daftar Pekerjaan Fisik
           </h2>
-          {isLevel2 && (
-            <Link to="/user/pekerjaan-fisik/tambah">
-              <button className="bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded">
-                + Tambah Pekerjaan
-              </button>
-            </Link>
-          )}
+          <div className="flex gap-2 w-auto">
+            {isLevel2 && (
+              <Link to="/user/pekerjaan-fisik/tambah">
+                <button className="bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded w-full sm:w-auto">
+                  + Tambah Pekerjaan
+                </button>
+              </Link>
+            )}
+            <button
+              onClick={() => setShowExportModal(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded"
+            >
+              Export
+            </button>
+          </div>
         </div>
 
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4">
-          <div>
+          <div className="w-full md:w-auto">
             <label className="mr-2 font-medium text-gray-700">
-              Filter Bagian:
+              Cari Nama Perusahaan:
             </label>
-            <select
-              value={selectedBagian}
-              onChange={(e) => setSelectedBagian(e.target.value)}
-              className="border border-gray-300 px-3 py-1 rounded"
-            >
-              <option value="semua">Semua</option>
-              <option value="paud">PAUD</option>
-              <option value="sd">SD</option>
-              <option value="smp">SMP</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="mr-2 font-medium text-gray-700">Cari Nama Perusahaan:</label>
             <input
               type="text"
               value={searchTerm}
@@ -183,6 +303,7 @@ const AdminPekerjaanFisikListPage = () => {
         </div>
 
         <DataTable
+          className="bg-black"
           columns={columns}
           data={filteredData}
           progressPending={loading}
@@ -192,6 +313,90 @@ const AdminPekerjaanFisikListPage = () => {
           noDataComponent="Belum ada data pekerjaan fisik"
         />
       </div>
+      {showExportModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+            <h2 className="text-xl font-bold mb-4 text-orange-600">
+              Export Pekerjaan Fisik
+            </h2>
+
+            {/* Pilihan Data */}
+            <div className="mb-4">
+              <label className="font-medium block mb-1">Pilih data:</label>
+              <label className="flex items-center gap-2 mb-2">
+                <input
+                  type="radio"
+                  name="rangeType"
+                  value="all"
+                  checked={rangeType === "all"}
+                  onChange={(e) => setRangeType(e.target.value)}
+                />
+                Semua data
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="rangeType"
+                  value="date"
+                  checked={rangeType === "date"}
+                  onChange={(e) => setRangeType(e.target.value)}
+                />
+                Berdasarkan tanggal
+              </label>
+            </div>
+
+            {/* Filter tanggal */}
+            {rangeType === "date" && (
+              <div className="mb-4 flex flex-col gap-2">
+                <div>
+                  <label className="block font-medium mb-1">
+                    Dari Tanggal:
+                  </label>
+                  <input
+                    type="date"
+                    className="border px-3 py-1 rounded w-full"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block font-medium mb-1">
+                    Sampai Tanggal:
+                  </label>
+                  <input
+                    type="date"
+                    className="border px-3 py-1 rounded w-full"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Tombol Aksi */}
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                onClick={() => setShowExportModal(false)}
+                className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400"
+              >
+                Back
+              </button>
+              <button
+                onClick={exportToExcel}
+                className="px-4 py-2 rounded bg-green-500 hover:bg-yellow-600 text-white"
+              >
+                Export Excel
+              </button>
+              <button
+                onClick={exportToPDF}
+                className="px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white"
+              >
+                Export PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

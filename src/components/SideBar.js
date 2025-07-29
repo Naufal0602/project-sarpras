@@ -141,7 +141,7 @@ const Sidebar = () => {
 
         {/* Bottom User Section */}
         <div className="absolute bottom-6 left-6 right-6 justify-center">
-          <div className="flex items-center justify-center space-x-3">
+          <div className="flex z-50 items-center justify-center space-x-3">
             {/* <LogoutButton /> */}
             <LogoutModal />
           </div>

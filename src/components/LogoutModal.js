@@ -30,7 +30,7 @@ const LogoutModal = () => {
 
       {/* Modal Konfirmasi */}
       {showModal && (
-        <div className="fixed inset-0 w-screen bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0  w-screen bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 max-w-md">
             <h2 className="text-xl font-semibold mb-4 text-gray-800">Konfirmasi Logout</h2>
             <p className="mb-6 text-gray-600">Apakah kamu yakin ingin logout?</p>
