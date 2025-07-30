@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import AdminSidebar from "../../components/AdminSideBar";
 import AdminNavbar from "../../components/AdminNavBar";
-import { Users, Clock, LayoutDashboard, CalendarDays, Timer } from "lucide-react";
+import { Users, Clock, CalendarDays, Timer, ShieldUser } from "lucide-react";
 
 const menuItems = [
   {
@@ -18,10 +18,10 @@ const menuItems = [
     path: "/admin/pending-users",
   },
   {
-    title: "Dashboard",
-    description: "Ringkasan data dan statistik",
-    icon: <LayoutDashboard size={28} className="text-orange-500" />,
-    path: "/admin/dashboard",
+    title: "Profile",
+    description: "Informasi akun anda",
+    icon: <ShieldUser size={28} className="text-orange-500" />,
+    path: "/admin/ProfilAdmin",
   },
 ];
 

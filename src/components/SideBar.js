@@ -102,7 +102,7 @@ const Sidebar = () => {
             </div>
             <div className="text-white">
               <h1 className="font-bold text-lg">SARPRAS</h1>
-              <p className="text-orange-100 text-xs">USer</p>
+              <p className="text-orange-100 text-xs">User</p>
             </div>
           </div>
         </div>

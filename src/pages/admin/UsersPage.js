@@ -413,11 +413,6 @@ const AdminUserListPage = () => {
             Daftar User
           </h2>
           <div className="flex justify-between items-center gap-2">
-            <Link to="/admin/users/register">
-              <button className="bg-green-500 text-white px-4 py-2 rounded-md w-full md:w-auto">
-                + Tambah Pengguna
-              </button>
-            </Link>
             <button
               onClick={() => setShowExportModal(true)}
               className="bg-red-500 text-white px-4 py-2 rounded-md"
