@@ -97,7 +97,7 @@ const LoginPage = () => {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
               />
               <span className="absolute right-3 top-3 text-gray-400 cursor-pointer">
-                👁️
+                
               </span>
             </div>
             <div className="flex flex-col items-center mt-4 w-full">

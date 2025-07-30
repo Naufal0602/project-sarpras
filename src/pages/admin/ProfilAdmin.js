@@ -4,9 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { doc, getDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import LogoutButton from "../../components/LogoutButton";
-import Sidebar from "../../components/SideBar";
-import Navbar from "../../components/Navbar";
-import { Link } from "react-router-dom";
+import AdminSidebar from "../../components/AdminSideBar";
+import AdminNavbar from "../../components/AdminNavBar";
 
 const UserProfile = () => {
   const navigate = useNavigate();
@@ -54,7 +53,7 @@ const UserProfile = () => {
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-orange-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600 text-lg">Loading user profile...</p>
+          <p className="mt-4 text-gray-600 text-lg">Memuat profil pengguna...</p>
         </div>
       </div>
     );
@@ -65,9 +64,7 @@ const UserProfile = () => {
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="text-center bg-white p-8 rounded-lg shadow-lg max-w-md">
           <div className="text-red-500 text-6xl mb-4">⚠️</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">
-            Terjadi Kesalahan
-          </h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Terjadi Kesalahan</h2>
           <p className="text-red-600 mb-6">{error}</p>
           <div className="space-y-3">
             <button
@@ -85,45 +82,46 @@ const UserProfile = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <div className="fixed">
-        <Navbar />
-        <Sidebar />
+      <div className="fixed z-10 md:relative">
+        <AdminNavbar />
+        <AdminSidebar />
       </div>
-      <div className="flex-1 ml-5 pt-16">
-        <div className="flex-1 lg:ml-64">
-          <div className="p-6 lg:p-10">
-            <div className="bg-white rounded-lg shadow-lg p-8">
-              <h1 className="text-3xl font-bold text-gray-800 mb-6">
-                Profil Pengguna
-              </h1>
-              <div className="space-y-4">
-                <p>
-                  <span className="font-semibold">Nama:</span> {userData.nama}
-                </p>
-                <p>
-                  <span className="font-semibold">Email:</span> {authUser.email}
-                </p>
-                <p>
-                  <span className="font-semibold">Role:</span> {userData.role}
-                </p>
-                <p>
-                  <span className="font-semibold">Level:</span> {userData.level}
-                </p>
-              </div>
-              <div className="mt-6 justify-end flex space-x-4">
-                <button
-                  onClick={() => navigate(-1)}
-                  className="bg-orange-500 text-white px-6 py-3 rounded-lg hover:bg-orange-600 transition-colors font-medium"
-                >
-                  Kembali
-                </button>
-                <Link
-                  to={`/user/edit-profile/${authUser.uid}`}
-                  className="ml-4 bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors font-medium">
-                  Edit Profil
-                  </Link>
-              </div>
+
+      <div className="flex-1 lg:ml-[0px] md:ml-[250px] px-4 md:px-10 py-20">
+        <div className="max-w-2xl mx-auto bg-white shadow-lg rounded-xl p-8">
+          <h1 className="text-2xl font-bold text-gray-800 mb-6">Profil Pengguna</h1>
+
+          <div className="grid gap-4 text-gray-700 text-sm">
+            <div className="flex justify-between border-b pb-2">
+              <span className="font-medium">Nama</span>
+              <span>{userData?.nama || "-"}</span>
             </div>
+            <div className="flex justify-between border-b pb-2">
+              <span className="font-medium">Email</span>
+              <span>{authUser?.email || "-"}</span>
+            </div>
+            <div className="flex justify-between border-b pb-2">
+              <span className="font-medium">Role</span>
+              <span>{userData?.role || "-"}</span>
+            </div>
+            <div className="flex justify-between border-b pb-2">
+              <span className="font-medium">Level</span>
+              <span>{userData?.level || "-"}</span>
+            </div>
+          </div>
+
+          <div className="mt-8 flex justify-end gap-4">
+            <button
+              onClick={() => navigate(-1)}
+              className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg"
+            >
+              Kembali
+            </button>
+            <button
+              onClick={() => navigate("/admin/ProfilAdmin/edit/${row.id}")}
+              className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg">
+                Edit Profil
+            </button>
           </div>
         </div>
       </div>

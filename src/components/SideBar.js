@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from "react";
 import {
   Users,
-  Search,
-  ChevronDown,
   Menu,
   X,
   Building,
-  BicepsFlexed 
+  BicepsFlexed ,
+  House
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import LogoutButton from "./LogoutButton";
@@ -42,6 +41,11 @@ const Sidebar = () => {
   }, []);
 
   const menuItems = [
+    {
+      name: "Dashboard",
+      icon: House,
+      to: "/user/dashboard",
+    },
     {
       name: "Profil",
       icon: Users,
@@ -92,13 +96,13 @@ const Sidebar = () => {
       >
         {/* Header */}
         <div className="p-6">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-white rounded flex items-center justify-center">
-              <span className="text-orange-500 font-bold text-sm">D</span>
+          <div className="flex flex-col items-center text-center space-x-2">
+            <div className="p-4 w-40 h-40 bg-white rounded flex rounded-full items-center justify-center">
+               <img className="w-full" src="/logo_sarpras1.png"></img> 
             </div>
             <div className="text-white">
               <h1 className="font-bold text-lg">SARPRAS</h1>
-              <p className="text-orange-100 text-xs">Admin</p>
+              <p className="text-orange-100 text-xs">USer</p>
             </div>
           </div>
         </div>

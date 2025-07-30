@@ -2,13 +2,14 @@ import React, { useState, useEffect } from "react";
 import {
   Users,
   Search,
-  ChevronDown,
+  House,
   Menu,
   X,
   Clock,
+  ShieldUser,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import LogoutButton from "./LogoutButton";
+
 
 import {
   collection,
@@ -41,6 +42,11 @@ const Sidebar = () => {
   }, []);
 
   const menuItems = [
+     {
+      name: "dashboard",
+      icon: House,
+      to: "/admin/dashboard",
+    },
     {
       name: "Kelola Daftar Pengguna",
       icon: Users,
@@ -51,6 +57,11 @@ const Sidebar = () => {
       icon: Clock,
       to: "/admin/pending-users",
       badge: pendingCount, // tambahkan badge di sini
+    },
+    {
+      name: "Profil Admin",
+      icon: ShieldUser,
+      to: "/admin/ProfilAdmin",
     },
   ];
 
@@ -87,11 +98,12 @@ const Sidebar = () => {
       >
         {/* Header */}
         <div className="p-6">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-white rounded flex items-center justify-center">
-              <span className="text-orange-500 font-bold text-sm">D</span>
+          <div className="flex flex-col justify-center text-center items-center space-x-2">
+            <div className="p-4 w-40 h-40 bg-white rounded flex rounded-full items-center justify-center">
+              <img className="w-full" src="/logo_sarpras1.png"></img> 
             </div>
-            <div className="text-white">
+            
+            <div className="text-white mt-4">
               <h1 className="font-bold text-lg">SARPRAS</h1>
               <p className="text-orange-100 text-xs">Admin</p>
             </div>

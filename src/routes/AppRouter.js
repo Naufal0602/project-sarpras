@@ -8,9 +8,12 @@ import UserPage from "../pages/admin/UsersPage";
 import RegisterPage from "../pages/auth/RegisterPage.js";
 import EditUserPage from "../pages/admin/EditUserPage";
 import PendingUserPage from "../pages/admin/PendingUser";
+import AdminProfil from "../pages/admin/ProfilAdmin.js";
+import EditProfil from "../pages/admin/EditProfil.js";
 
 import UserDashboard from "../pages/user/dashboard.js";
 import UserProfil from "../pages/user/Profil.js";
+import UserEditProfil from "../pages/user/EditProfilUser.js";
 
 import UserPerusahaan from "../pages/user/perusahaan/index.js";
 import UserTambahPerusahaan from "../pages/user/perusahaan/TambahPerusahaanPage.js";
@@ -41,11 +44,14 @@ const AppRouter = () => {
           <Route path="/admin/users" element={<UserPage />} />
           <Route path="/admin/edit-user/:id" element={<EditUserPage />} />
           <Route path="/admin/pending-users" element={<PendingUserPage />} />
+          <Route path="/admin/ProfilAdmin" element={<AdminProfil />} />
+          <Route path="/admin/ProfilAdmin/edit/:id" element={<EditProfil />} />
         </Route>
 
         <Route element={<ProtectedRouteByRole allowedRole={["user-sd", "user-paud", "user-smp"]}/>}>
           <Route path="/user/dashboard" element={<UserDashboard />} />
           <Route path="/user/profil" element={<UserProfil />} />
+          <Route path="/user/edit-profile/:id" element={<UserEditProfil />} />
           <Route path="/user/perusahaan" element={<UserPerusahaan />} />
           <Route path="/user/perusahaan/tambah" element={<UserTambahPerusahaan />} />
           <Route path="/user/perusahaan/edit/:id" element={<UserEditPerusahaan />} />
