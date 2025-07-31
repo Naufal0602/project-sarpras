@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { auth, db } from "../services/firebase";
 import {
   createUserWithEmailAndPassword,
-  deleteUser,
 } from "firebase/auth";
 import {
   doc,

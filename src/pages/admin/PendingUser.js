@@ -1,12 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
-import {
-  createUserWithEmailAndPassword,
-  deleteUser,
-} from "firebase/auth";
-import { doc, deleteDoc, setDoc, updateDoc } from "firebase/firestore";
-import { auth, db } from "../../services/firebase";
-import { useNavigate } from "react-router-dom";
+import { db } from "../../services/firebase";
 import ModalProsesUser from "../../components/ModalProsesUser";
 import AdminNavbar from "../../components/AdminNavBar";
 import AdminSidebar from "../../components/AdminSideBar";

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
   Users,
-  Search,
   House,
   Menu,
   X,
@@ -23,7 +22,6 @@ import LogoutModal from './LogoutModal';
 
 const Sidebar = () => {
   const [activeItem, setActiveItem] = useState("Campaign Funds");
-  const [searchQuery, setSearchQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
 
@@ -100,7 +98,7 @@ const Sidebar = () => {
         <div className="p-6">
           <div className="flex flex-col justify-center text-center items-center space-x-2">
             <div className="p-4 w-40 h-40 bg-white rounded flex rounded-full items-center justify-center">
-              <img className="w-full" src="/logo_sarpras1.png"></img> 
+              <img className="w-full" src="/logo_sarpras1.png" alt=""></img> 
             </div>
             
             <div className="text-white mt-4">

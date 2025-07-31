@@ -8,7 +8,6 @@ import {
   House
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import LogoutButton from "./LogoutButton";
 
 import {
   collection,
@@ -22,7 +21,6 @@ import LogoutModal from './LogoutModal';
 
 const Sidebar = () => {
   const [activeItem, setActiveItem] = useState("Campaign Funds");
-  const [searchQuery, setSearchQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
 
@@ -98,7 +96,8 @@ const Sidebar = () => {
         <div className="p-6">
           <div className="flex flex-col items-center text-center space-x-2">
             <div className="p-4 w-40 h-40 bg-white rounded flex rounded-full items-center justify-center">
-               <img className="w-full" src="/logo_sarpras1.png"></img> 
+               <img className="w-full" src="/logo_sarpras1.png" alt=""></img> 
+               <span className="hidden">{pendingCount} pending</span>
             </div>
             <div className="text-white">
               <h1 className="font-bold text-lg">SARPRAS</h1>

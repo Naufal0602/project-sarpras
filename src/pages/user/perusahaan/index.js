@@ -77,7 +77,6 @@ const AdminPerusahaanListPage = () => {
 
   // State modal
   const [showExportModal, setShowExportModal] = useState(false);
-  const [exportFormat, setExportFormat] = useState("pdf");
   const [exportStatus, setExportStatus] = useState("semua");
 
   // Format tanggal dan nama file
@@ -114,7 +113,6 @@ const AdminPerusahaanListPage = () => {
 
   const exportToPDF = () => {
     const doc = new jsPDF();
-    const data = getExportData();
 
   const tanggalCetak = new Date();
   const formattedTanggal = tanggalCetak.toLocaleDateString("id-ID", {
@@ -189,14 +187,6 @@ const AdminPerusahaanListPage = () => {
     saveAs(blob, `DataPerusahaan_${getFormattedNow()}.xlsx`);
   };
 
-  const handleExport = () => {
-    if (exportFormat === "pdf") {
-      exportToPDF();
-    } else {
-      exportToExcel();
-    }
-    setShowExportModal(false);
-  };
 
   const columns = [
     {

@@ -53,7 +53,9 @@ const UserProfile = () => {
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-orange-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600 text-lg">Memuat profil pengguna...</p>
+          <p className="mt-4 text-gray-600 text-lg">
+            Memuat profil pengguna...
+          </p>
         </div>
       </div>
     );
@@ -64,7 +66,9 @@ const UserProfile = () => {
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="text-center bg-white p-8 rounded-lg shadow-lg max-w-md">
           <div className="text-red-500 text-6xl mb-4">⚠️</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Terjadi Kesalahan</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">
+            Terjadi Kesalahan
+          </h2>
           <p className="text-red-600 mb-6">{error}</p>
           <div className="space-y-3">
             <button
@@ -89,7 +93,9 @@ const UserProfile = () => {
 
       <div className="flex-1 lg:ml-[0px] md:ml-[250px] px-4 md:px-10 py-20">
         <div className="max-w-2xl mx-auto bg-white shadow-lg rounded-xl p-8">
-          <h1 className="text-2xl font-bold text-gray-800 mb-6">Profil Pengguna</h1>
+          <h1 className="text-2xl font-bold text-gray-800 mb-6">
+            Profil Pengguna
+          </h1>
 
           <div className="grid gap-4 text-gray-700 text-sm">
             <div className="flex justify-between border-b pb-2">
@@ -118,9 +124,10 @@ const UserProfile = () => {
               Kembali
             </button>
             <button
-              onClick={() => navigate("/admin/ProfilAdmin/edit/${row.id}")}
-              className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg">
-                Edit Profil
+              onClick={() => navigate(`/admin/ProfilAdmin/edit/${authUser.id}`)}
+              className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg"
+            >
+              Edit Profil
             </button>
           </div>
         </div>
