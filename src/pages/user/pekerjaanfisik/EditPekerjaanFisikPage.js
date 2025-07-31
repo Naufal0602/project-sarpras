@@ -6,6 +6,8 @@ import {
   getDocs,
   collection,
   serverTimestamp,
+  query,
+  where,
 } from "firebase/firestore";
 import { db } from "../../../services/firebase";
 import { useParams, useNavigate } from "react-router-dom";
@@ -20,19 +22,32 @@ const EditPekerjaanFisikPage = () => {
   const [jenisPekerjaan, setJenisPekerjaan] = useState("");
   const [sekolah, setSekolah] = useState("");
   const [deskripsi, setDeskripsi] = useState("");
-  const [bagian, setBagian] = useState("");
   const [loading, setLoading] = useState(false);
   const [perusahaanOptions, setPerusahaanOptions] = useState([]);
 
   useEffect(() => {
     const fetchPerusahaan = async () => {
-      const snapshot = await getDocs(collection(db, "perusahaan"));
-      const data = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        nama: doc.data().nama_perusahaan,
-      }));
-      setPerusahaanOptions(data);
-    };
+  try {
+    const perusahaanRef = collection(db, "perusahaan");
+    const aktifQuery = query(perusahaanRef, where("status", "==", "aktif"));
+    const snapshot = await getDocs(aktifQuery);
+
+    if (snapshot.empty) {
+      alert("Tidak ada perusahaan aktif yang ditemukan.");
+      return;
+    }
+
+    const data = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      nama: doc.data().nama_perusahaan,
+    }));
+
+    setPerusahaanOptions(data);
+  } catch (err) {
+    console.error("Gagal mengambil daftar perusahaan:", err);
+    alert("Terjadi kesalahan saat mengambil data perusahaan.");
+  }
+};
 
     const fetchPekerjaanFisik = async () => {
       try {
@@ -45,7 +60,6 @@ const EditPekerjaanFisikPage = () => {
           setJenisPekerjaan(data.jenis_pekerjaan || "");
           setSekolah(data.sekolah || "");
           setDeskripsi(data.deskripsi || "");
-          setBagian(data.bagian || "");
         } else {
           alert("Data tidak ditemukan.");
           navigate("/user/pekerjaan-fisik");

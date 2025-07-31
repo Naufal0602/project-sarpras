@@ -19,6 +19,15 @@ const AdminPerusahaanListPage = () => {
   const [selectedStatus, setSelectedStatus] = useState("semua");
   const userData = JSON.parse(localStorage.getItem("user"));
   const isLevel2 = userData?.level === 2;
+  const [exportScope, setExportScope] = useState("sebagian"); // default: sebagian
+
+  const currentDate = new Date();
+  const [selectedMonth, setSelectedMonth] = useState(
+    String(currentDate.getMonth() + 1)
+  );
+  const [selectedYear, setSelectedYear] = useState(
+    String(currentDate.getFullYear())
+  );
 
   const fetchPerusahaan = async () => {
     try {
@@ -82,29 +91,81 @@ const AdminPerusahaanListPage = () => {
 
   // Filter data berdasarkan status
   const getExportData = () => {
-    if (exportStatus === "semua") return perusahaanList;
-    return perusahaanList.filter((p) => p.status === exportStatus);
+    const filtered = perusahaanList.filter((p) => {
+      const statusMatch = exportStatus === "semua" || p.status === exportStatus;
+
+      const createdAt = p.created_at?.toDate?.();
+      const monthMatch =
+        selectedMonth === "semua" ||
+        (createdAt && createdAt.getMonth() + 1 === parseInt(selectedMonth));
+      const yearMatch =
+        selectedYear === "semua" ||
+        (createdAt && createdAt.getFullYear() === parseInt(selectedYear));
+
+      return statusMatch && monthMatch && yearMatch;
+    });
+
+    // Urutkan: Aktif dulu, lalu Tidak Aktif, lalu sisanya
+    const statusOrder = { aktif: 1, "tidak aktif": 2 };
+    return filtered.sort((a, b) => {
+      return (statusOrder[a.status] || 3) - (statusOrder[b.status] || 3);
+    });
   };
 
   const exportToPDF = () => {
     const doc = new jsPDF();
     const data = getExportData();
 
-    const tableData = data.map((row, i) => [
-      i + 1,
-      row.nama_perusahaan || "-",
-      row.direktur || "-",
-      row.alamat || "-",
-      row.status || "-",
-      formatDate(row.created_at),
-    ]);
+  const tanggalCetak = new Date();
+  const formattedTanggal = tanggalCetak.toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
 
-    autoTable(doc, {
-      head: [["No", "Nama", "Direktur", "Alamat", "Status", "Dibuat"]],
-      body: tableData,
-    });
+  // Header laporan
+  doc.setFontSize(16);
+  doc.setTextColor(33, 33, 33);
+  doc.text("LAPORAN DATA PERUSAHAAN", 105, 20, { align: "center" });
 
-    doc.save(`DataPerusahaan_${getFormattedNow()}.pdf`);
+  doc.setFontSize(10);
+  doc.setTextColor(100);
+  doc.text(`Dicetak pada: ${formattedTanggal}`, 105, 27, { align: "center" });
+
+  // Spasi sebelum tabel
+  doc.setLineWidth(0.5);
+  doc.setDrawColor(0);
+
+  // Tabel data
+  autoTable(doc, {
+    startY: 35,
+    head: [[
+      "No", "Nama_perusahaan", "Direktur", "Alamat", "Status", "Dibuat"
+    ]],
+    body: getExportData().map((item, index) => [
+      index + 1,
+      item.nama_perusahaan,
+      item.direktur,
+      item.alamat,
+      item.status,
+      item.created_at?.toDate?.().toLocaleDateString("id-ID") ?? "-"
+    ]),
+    theme: "grid",
+    headStyles: {
+      fillColor: [249, 115, 22], // orange-500
+      textColor: [255, 255, 255],
+      halign: "center",
+    },
+    styles: {
+      fontSize: 9,
+      cellPadding: 3,
+    },
+    bodyStyles: {
+      textColor: [33, 33, 33],
+    },
+  });
+
+  doc.save(`DataPerusahaan_${new Date().getTime()}.pdf`);
   };
 
   const exportToExcel = () => {
@@ -237,40 +298,39 @@ const AdminPerusahaanListPage = () => {
             <button
               onClick={() => setShowExportModal(true)}
               className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded"
-            >Export
+            >
+              Export
             </button>
           </div>
         </div>
 
-          <div className="flex flex-row gap-2 justify-between w-full md:w-auto mb-4">
-            <div className="flex items-center gap-2">
-              <label className="mr-2 font-medium text-gray-700">
-                Filter Status:
-              </label>
-              <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className="border border-gray-300 px-3 py-1 rounded w-full md:w-auto"
-              >
-                <option value="semua">Semua</option>
-                <option value="aktif">Aktif</option>
-                <option value="tidak aktif">Nonaktif</option>
-              </select>
-            </div>
-
-            <div className="flex items-center gap-2 w-full md:w-auto">
-              <label className="mr-2 font-medium text-gray-700">
-                Cari Nama:
-              </label>
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Masukkan nama perusahaan"
-                className="border border-gray-300 px-3 py-1 rounded w-full md:w-64"
-              />
-            </div>
+        <div className="flex flex-row gap-2 justify-between w-full md:w-auto mb-4">
+          <div className="flex items-center gap-2">
+            <label className="mr-2 font-medium text-gray-700">
+              Filter Status:
+            </label>
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              className="border border-gray-300 px-3 py-1 rounded w-full md:w-auto"
+            >
+              <option value="semua">Semua</option>
+              <option value="aktif">Aktif</option>
+              <option value="tidak aktif">Nonaktif</option>
+            </select>
           </div>
+
+          <div className="flex items-center gap-2 w-full md:w-auto">
+            <label className="mr-2 font-medium text-gray-700">Cari Nama:</label>
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Masukkan nama perusahaan"
+              className="border border-gray-300 px-3 py-1 rounded w-full md:w-64"
+            />
+          </div>
+        </div>
 
         <DataTable
           columns={columns}
@@ -289,73 +349,125 @@ const AdminPerusahaanListPage = () => {
                 Export Data
               </h3>
 
-              {/* Pilih Format */}
+              {/* Pilihan Semua atau Sebagian */}
               <div className="mb-4">
                 <label className="font-medium text-gray-700 mb-1 block">
-                  Format:
-                </label>
-                <div className="flex gap-4">
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="format"
-                      value="pdf"
-                      checked={exportFormat === "pdf"}
-                      onChange={() => setExportFormat("pdf")}
-                      className="mr-2"
-                    />
-                    PDF
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="format"
-                      value="excel"
-                      checked={exportFormat === "excel"}
-                      onChange={() => setExportFormat("excel")}
-                      className="mr-2"
-                    />
-                    Excel
-                  </label>
-                </div>
-              </div>
-
-              {/* Pilih Status */}
-              <div className="mb-4">
-                <label className="font-medium text-gray-700 mb-1 block">
-                  Data yang ingin diexport:
+                  Pilih Data:
                 </label>
                 <div className="flex flex-col gap-2">
-                  {["semua", "aktif", "tidak aktif"].map((status) => (
-                    <label key={status} className="flex items-center">
+                  {["semua", "sebagian"].map((value) => (
+                    <label key={value} className="flex items-center">
                       <input
                         type="radio"
-                        name="status"
-                        value={status}
-                        checked={exportStatus === status}
-                        onChange={() => setExportStatus(status)}
+                        name="exportScope"
+                        value={value}
+                        checked={exportScope === value}
+                        onChange={() => setExportScope(value)}
                         className="mr-2"
                       />
-                      {status.charAt(0).toUpperCase() + status.slice(1)}
+                      {value.charAt(0).toUpperCase() + value.slice(1)}
                     </label>
                   ))}
                 </div>
               </div>
 
-              {/* Aksi */}
-              <div className="flex justify-end gap-4">
+              {/* Filter Status */}
+              {exportScope === "sebagian" && (
+                <>
+                  <div className="mb-4">
+                    <label className="font-medium text-gray-700 mb-1 block">
+                      Status:
+                    </label>
+                    <div className="flex flex-col gap-2">
+                      {["semua", "aktif", "tidak aktif"].map((status) => (
+                        <label key={status} className="flex items-center">
+                          <input
+                            type="radio"
+                            name="status"
+                            value={status}
+                            checked={exportStatus === status}
+                            onChange={() => setExportStatus(status)}
+                            className="mr-2"
+                          />
+                          {status.charAt(0).toUpperCase() + status.slice(1)}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Filter Bulan */}
+                  <div className="mb-4">
+                    <label className="font-medium text-gray-700 mb-1 block">
+                      Bulan:
+                    </label>
+                    <select
+                      value={selectedMonth}
+                      onChange={(e) => setSelectedMonth(e.target.value)}
+                      className="w-full border border-gray-300 px-3 py-2 rounded"
+                    >
+                      <option value="semua">Semua</option>
+                      {Array.from({ length: 12 }, (_, i) => (
+                        <option key={i + 1} value={i + 1}>
+                          {new Date(0, i).toLocaleString("id-ID", {
+                            month: "long",
+                          })}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Filter Tahun */}
+                  <div className="mb-6">
+                    <label className="font-medium text-gray-700 mb-1 block">
+                      Tahun:
+                    </label>
+                    <select
+                      value={selectedYear}
+                      onChange={(e) => setSelectedYear(e.target.value)}
+                      className="w-full border border-gray-300 px-3 py-2 rounded"
+                    >
+                      <option value="semua">Semua</option>
+                      {[
+                        ...new Set(
+                          perusahaanList.map((p) =>
+                            p.created_at?.toDate?.()?.getFullYear()
+                          )
+                        ),
+                      ]
+                        .filter(Boolean)
+                        .sort((a, b) => b - a)
+                        .map((year) => (
+                          <option key={year} value={year}>
+                            {year}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                </>
+              )}
+
+              {/* Tombol Aksi */}
+              <div className="flex justify-between">
                 <button
                   onClick={() => setShowExportModal(false)}
                   className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded"
                 >
                   Tutup
                 </button>
-                <button
-                  onClick={handleExport}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-                >
-                  Export
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={exportToPDF}
+                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
+                  >
+                    Export PDF
+                  </button>
+                  <button
+                    onClick={exportToExcel}
+                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
+                  >
+                    Export Excel
+                  </button>
+                </div>
               </div>
             </div>
           </div>

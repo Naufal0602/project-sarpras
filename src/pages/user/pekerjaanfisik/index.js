@@ -22,9 +22,8 @@ const AdminPekerjaanFisikListPage = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [showExportModal, setShowExportModal] = useState(false);
-  const [rangeType, setRangeType] = useState("all"); // 'all' atau 'date'
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [rangeType, setRangeType] = useState("date"); // 'all' atau 'date'
+
 
   const userData = JSON.parse(localStorage.getItem("user"));
   const isLevel2 = userData?.level === 2;
@@ -34,19 +33,19 @@ const AdminPekerjaanFisikListPage = () => {
     ? role.replace("user-", "")
     : "semua"; // admin lihat semua
 
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+
   const getFilteredExportData = () => {
     let data = [...filteredData];
 
     if (rangeType === "date") {
+      const start = new Date(selectedYear, selectedMonth - 1, 1);
+      const end = new Date(selectedYear, selectedMonth, 0, 23, 59, 59, 999); // akhir bulan
+
       data = data.filter((item) => {
         const createdAt = item.created_at?.toDate?.();
-        if (!createdAt) return false;
-
-        const start = new Date(startDate);
-        const end = new Date(endDate);
-        end.setHours(23, 59, 59, 999); // akhir hari
-
-        return createdAt >= start && createdAt <= end;
+        return createdAt && createdAt >= start && createdAt <= end;
       });
     }
 
@@ -70,7 +69,27 @@ const AdminPekerjaanFisikListPage = () => {
   const exportToPDF = () => {
     const exportData = getFilteredExportData();
     const doc = new jsPDF();
-    doc.text("Daftar Pekerjaan Fisik", 14, 15);
+
+    const now = new Date();
+    const formattedDate = now.toLocaleDateString("id-ID", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+
+    // Judul dan tanggal cetak
+    // Judul di tengah
+    doc.setFontSize(16);
+    doc.setTextColor(255, 87, 34); // orange-400
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const title = "Laporan Pekerjaan Fisik";
+    const textWidth = doc.getTextWidth(title);
+    const x = (pageWidth - textWidth) / 2;
+    doc.text(title, x, 15);
+
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Tanggal Dicetak: ${formattedDate}`, 14, 22);
 
     const tableColumn = [
       "Perusahaan",
@@ -90,15 +109,32 @@ const AdminPekerjaanFisikListPage = () => {
       formatDate(row.created_at),
     ]);
 
-    // Panggil autoTable langsung dari import
     autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
-      startY: 20,
-      styles: { fontSize: 8 },
+      startY: 28,
+      styles: {
+        fontSize: 8,
+      },
+      headStyles: {
+        fillColor: [255, 160, 0], // Tailwind orange-400 => RGB
+        textColor: 255,
+        halign: "center",
+      },
+      bodyStyles: {
+        valign: "top",
+      },
+      columnStyles: {
+        0: { cellWidth: 35 },
+        1: { cellWidth: 35 },
+        2: { cellWidth: 25 },
+        3: { cellWidth: 40 },
+        4: { cellWidth: 25 },
+        5: { cellWidth: 25 },
+      },
     });
 
-    doc.save(`DataPekerjaanFisik_${getFormattedNow()}.pdf`);
+    doc.save(`LaporanPekerjaanFisik_${getFormattedNow()}.pdf`);
     setShowExportModal(false);
   };
 
@@ -207,11 +243,6 @@ const AdminPekerjaanFisikListPage = () => {
       selector: (row) => row.deskripsi || "-",
       wrap: true,
       grow: 2,
-    },
-    {
-      name: "Bagian",
-      selector: (row) => row.bagian?.toUpperCase() || "-",
-      sortable: true,
     },
     {
       name: "Dibuat",
@@ -323,6 +354,16 @@ const AdminPekerjaanFisikListPage = () => {
             {/* Pilihan Data */}
             <div className="mb-4">
               <label className="font-medium block mb-1">Pilih data:</label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="rangeType"
+                  value="date"
+                  checked={rangeType === "date"}
+                  onChange={(e) => setRangeType(e.target.value)}
+                />
+                Sebagian
+              </label>
               <label className="flex items-center gap-2 mb-2">
                 <input
                   type="radio"
@@ -333,42 +374,43 @@ const AdminPekerjaanFisikListPage = () => {
                 />
                 Semua data
               </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="rangeType"
-                  value="date"
-                  checked={rangeType === "date"}
-                  onChange={(e) => setRangeType(e.target.value)}
-                />
-                Berdasarkan tanggal
-              </label>
+              
             </div>
 
             {/* Filter tanggal */}
             {rangeType === "date" && (
-              <div className="mb-4 flex flex-col gap-2">
-                <div>
-                  <label className="block font-medium mb-1">
-                    Dari Tanggal:
-                  </label>
-                  <input
-                    type="date"
-                    className="border px-3 py-1 rounded w-full"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="block font-medium mb-1">
-                    Sampai Tanggal:
-                  </label>
-                  <input
-                    type="date"
-                    className="border px-3 py-1 rounded w-full"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                  />
+              <div className="mb-4">
+                <label className="block font-medium mb-1">
+                  Pilih Bulan & Tahun:
+                </label>
+                <div className="flex gap-2">
+                  <select
+                    className="border px-3 py-1 rounded w-1/2"
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+                  >
+                    {Array.from({ length: 12 }, (_, i) => (
+                      <option key={i} value={i + 1}>
+                        {new Date(0, i).toLocaleString("id-ID", {
+                          month: "long",
+                        })}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    className="border px-3 py-1 rounded w-1/2"
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                  >
+                    {Array.from({ length: 5 }, (_, i) => {
+                      const year = new Date().getFullYear() - i;
+                      return (
+                        <option key={year} value={year}>
+                          {year}
+                        </option>
+                      );
+                    })}
+                  </select>
                 </div>
               </div>
             )}

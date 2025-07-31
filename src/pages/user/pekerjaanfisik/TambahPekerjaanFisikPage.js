@@ -48,10 +48,14 @@ const TambahPekerjaanFisikPage = () => {
     const fetchPerusahaan = async () => {
       try {
         const snapshot = await getDocs(collection(db, "perusahaan"));
-        const data = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          nama: doc.data().nama_perusahaan,
-        }));
+        const data = snapshot.docs
+          .map((doc) => ({
+            id: doc.id,
+            nama: doc.data().nama_perusahaan,
+            status: doc.data().status,
+          }))
+          .filter((item) => item.status === "aktif");
+
         setPerusahaanOptions(data);
         if (data.length > 0) {
           setPerusahaanId(data[0].id);

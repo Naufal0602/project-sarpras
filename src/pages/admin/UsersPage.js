@@ -23,13 +23,19 @@ const roleOptions = ["admin", "user-sd", "user-paud", "user-smp"];
 const levelOptions = [1, 2];
 
 const AdminUserListPage = () => {
+  const now = new Date();
+  const currentMonth = String(now.getMonth() + 1).padStart(2, "0");
+  const currentYear = String(now.getFullYear());
+
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
   const [showExportModal, setShowExportModal] = useState(false);
-  const [exportOption, setExportOption] = useState("all"); // "all" atau "filtered"
+  const [exportOption, setExportOption] = useState("filtered"); // "all" atau "filtered"
   const [selectedRoles, setSelectedRoles] = useState([]);
   const [selectedLevels, setSelectedLevels] = useState([]);
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+  const [selectedYear, setSelectedYear] = useState(currentYear);
 
   const fetchUsers = async () => {
     try {
@@ -132,11 +138,39 @@ const AdminUserListPage = () => {
     );
   };
 
+  const formatRole = (role) => {
+    switch (role) {
+      case "admin":
+        return "Admin";
+      case "user-sd":
+        return "User SD";
+      case "user-smp":
+        return "User SMP";
+      case "user-paud":
+        return "User PAUD";
+      default:
+        return role;
+    }
+  };
   const handleExportPDF = () => {
     const doc = new jsPDF();
 
-    // Filter data sesuai pilihan
-    const filteredUsers =
+    // Judul laporan
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text("LAPORAN DATA PENGGUNA", 105, 15, { align: "center" });
+
+    // Tanggal cetak
+    const tanggalCetak = new Date().toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+    doc.setFontSize(10);
+    doc.text(`Dicetak pada: ${tanggalCetak}`, 14, 22);
+
+    // Filter dan urutkan data
+    let filteredUsers =
       exportOption === "all"
         ? users
         : users.filter((user) => {
@@ -145,25 +179,57 @@ const AdminUserListPage = () => {
             const levelMatch =
               selectedLevels.length === 0 ||
               selectedLevels.includes(String(user.level ?? ""));
-            return roleMatch && levelMatch;
+            const createdAt =
+              user.createdAt?.toDate?.() || new Date(user.createdAt);
+            const monthMatch =
+              !selectedMonth ||
+              createdAt.getMonth() + 1 === parseInt(selectedMonth);
+            const yearMatch =
+              !selectedYear ||
+              createdAt.getFullYear() === parseInt(selectedYear);
+            return roleMatch && levelMatch && monthMatch && yearMatch;
           });
 
+    // Urutkan berdasarkan role > level
+    const roleOrder = ["admin", "user-sd", "user-smp", "user-paud"];
+    filteredUsers.sort((a, b) => {
+      const roleCompare = roleOrder.indexOf(a.role) - roleOrder.indexOf(b.role);
+      if (roleCompare !== 0) return roleCompare;
+
+      const levelA = parseInt(a.level) || 0;
+      const levelB = parseInt(b.level) || 0;
+      return levelB - levelA; // Level 2 dulu
+    });
+
+    // Tabel
     autoTable(doc, {
       head: [["No", "Nama", "Email", "Role", "Level", "Dibuat"]],
       body: filteredUsers.map((user, index) => [
         index + 1,
         user.nama || "-",
         user.email || "-",
-        user.role || "-",
-        user.level || "-",
+        formatRole(user.role),
+        user.level ? `Level ${user.level}` : "-",
         formatDate(user.createdAt),
       ]),
-      startY: 20,
+      startY: 28,
+      styles: {
+        fontSize: 10,
+        cellPadding: 4,
+      },
+      headStyles: {
+        fillColor: [255, 165, 0],
+        textColor: [0, 0, 0],
+        halign: "center",
+      },
+      alternateRowStyles: {
+        fillColor: [245, 245, 245],
+      },
     });
 
-    const fileName = `dataPengguna${getFormattedNow()}.pdf`;
+    const fileName = `LaporanPengguna_${getFormattedNow()}.pdf`;
     doc.save(fileName);
-    setShowExportModal(false); // Tutup modal
+    setShowExportModal(false);
   };
 
   const handleExportExcel = () => {
@@ -217,7 +283,7 @@ const AdminUserListPage = () => {
       selector: (row) => row.nama,
       sortable: true,
     },
-    
+
     {
       name: "Email",
       selector: (row) => row.email,
@@ -238,7 +304,8 @@ const AdminUserListPage = () => {
             </option>
           ))}
         </select>
-      ),sortable: true,
+      ),
+      sortable: true,
     },
     {
       name: "Level",
@@ -283,7 +350,6 @@ const AdminUserListPage = () => {
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-gray-100">
-      
       {/* Navbar dan Sidebar */}
       <div className="fixed z-50">
         <AdminNavbar />
@@ -301,20 +367,20 @@ const AdminUserListPage = () => {
                 <label>
                   <input
                     type="radio"
-                    value="all"
-                    checked={exportOption === "all"}
-                    onChange={() => setExportOption("all")}
-                  />
-                  <span className="ml-1">Semua</span>
-                </label>
-                <label>
-                  <input
-                    type="radio"
                     value="filtered"
                     checked={exportOption === "filtered"}
                     onChange={() => setExportOption("filtered")}
                   />
                   <span className="ml-1">Sebagian</span>
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    value="all"
+                    checked={exportOption === "all"}
+                    onChange={() => setExportOption("all")}
+                  />
+                  <span className="ml-1">Semua</span>
                 </label>
               </div>
             </div>
@@ -375,6 +441,56 @@ const AdminUserListPage = () => {
                     </label>
                   ))}
                 </div>
+
+                {/* Filter Bulan & Tahun */}
+                <div className="mb-4 flex gap-4">
+                  <div>
+                    <label className="font-semibold block mb-1">Bulan:</label>
+                    <select
+                      value={selectedMonth}
+                      onChange={(e) => setSelectedMonth(e.target.value)}
+                      className="w-full border rounded px-2 py-1"
+                    >
+                      {[
+                        "01",
+                        "02",
+                        "03",
+                        "04",
+                        "05",
+                        "06",
+                        "07",
+                        "08",
+                        "09",
+                        "10",
+                        "11",
+                        "12",
+                      ].map((month, i) => (
+                        <option key={month} value={month}>
+                          {new Date(0, i).toLocaleString("id-ID", {
+                            month: "long",
+                          })}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="font-semibold block mb-1">Tahun:</label>
+                    <select
+                      value={selectedYear}
+                      onChange={(e) => setSelectedYear(e.target.value)}
+                      className="w-full border rounded px-2 py-1"
+                    >
+                      {Array.from({ length: 5 }).map((_, i) => {
+                        const year = new Date().getFullYear() - i;
+                        return (
+                          <option key={year} value={year}>
+                            {year}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+                </div>
               </>
             )}
 
@@ -404,7 +520,6 @@ const AdminUserListPage = () => {
           </div>
         </div>
       )}
-
 
       {/* Konten Utama */}
       <div className="md:ml-[250px] mt-[60px] p-4 md:p-6 w-full">
