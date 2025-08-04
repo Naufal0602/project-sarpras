@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import LandingPage from "../pages/LandingPage";
 import LoginPage from "../pages/auth/LoginPage";
 import ConfirmAccountPage from "../pages/auth/ConfirmAccountPage.js";
 import LupaPasswordPage from "../pages/auth/LupaPassword.js";
@@ -22,6 +23,7 @@ import UserEditPerusahaan from "../pages/user/perusahaan/EditPerusahaanPage.js";
 import UserPekerjaanFisik from "../pages/user/pekerjaanfisik/index.js";
 import TambahPekerjaanFisikPage from "../pages/user/pekerjaanfisik/TambahPekerjaanFisikPage.js";
 import EditPekerjaanFisikPage from "../pages/user/pekerjaanfisik/EditPekerjaanFisikPage.js";
+import TambahGaleriPage from "../pages/user/pekerjaanfisik/TambahGaleriPage.js";
 
 import UnauthorizedPage from "../pages/errors/unauthorizedPage";
 import ProtectedRouteByRole from "../components/ProtectedRouteByRole";
@@ -32,6 +34,7 @@ const AppRouter = () => {
     <Router>
       <Routes>
         {/* Public routes */}
+        <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/konfirmasi-akun" element={<ConfirmAccountPage />} />
         <Route path="/register" element={<RegisterPage />} />
@@ -59,6 +62,7 @@ const AppRouter = () => {
           <Route path="/user/pekerjaan-fisik" element={<UserPekerjaanFisik />} />
           <Route path="/user/pekerjaan-fisik/tambah" element={<TambahPekerjaanFisikPage />} />
           <Route path="/user/pekerjaan-fisik/edit/:id" element={<EditPekerjaanFisikPage />} />
+        <Route path="/user/pekerjaan-fisik/galeri/tambah/:id" element={<TambahGaleriPage />} />
 
         </Route>
 

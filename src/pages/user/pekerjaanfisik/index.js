@@ -5,17 +5,21 @@ import {
   deleteDoc,
   doc,
   getDoc,
+  query,
+  where,
+  limit,
 } from "firebase/firestore";
 import { db } from "../../../services/firebase";
 import Navbar from "../../../components/Navbar";
 import Sidebar from "../../../components/SideBar";
 import { Link } from "react-router-dom";
 import DataTable from "react-data-table-component";
-import { PencilLine, Trash2 } from "lucide-react";
+import { PencilLine, Trash2, GalleryHorizontal } from "lucide-react";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import axios from "axios";
 
 const AdminPekerjaanFisikListPage = () => {
   const [pekerjaanList, setPekerjaanList] = useState([]);
@@ -23,11 +27,14 @@ const AdminPekerjaanFisikListPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showExportModal, setShowExportModal] = useState(false);
   const [rangeType, setRangeType] = useState("date"); // 'all' atau 'date'
-
-
+  const [selectedData, setSelectedData] = useState(null);
   const userData = JSON.parse(localStorage.getItem("user"));
   const isLevel2 = userData?.level === 2;
   const role = userData?.role; // e.g. 'user-smp'
+  const [showModal, setShowModal] = useState(false);
+  const [gambarList, setGambarList] = useState([]);
+  const [judulModal, setJudulModal] = useState("");
+  const [zoomImageUrl, setZoomImageUrl] = useState(null);
 
   const bagianUser = role?.includes("user-")
     ? role.replace("user-", "")
@@ -50,6 +57,37 @@ const AdminPekerjaanFisikListPage = () => {
     }
 
     return data;
+  };
+
+  const handleZoom = (url) => {
+    setZoomImageUrl(url);
+  };
+
+  const closeZoom = () => {
+    setZoomImageUrl(null);
+  };
+
+  const openGaleriModal = async (id, label) => {
+    try {
+      // Ambil data pekerjaan berdasarkan ID
+      const pekerjaan = pekerjaanList.find((item) => item.id === id);
+      setSelectedData(pekerjaan); // untuk detail di modal
+
+      // Ambil data galeri dari Firestore
+      const q = query(
+        collection(db, "galeri"),
+        where("id_pekerjaan", "==", id)
+      );
+      const snapshot = await getDocs(q);
+      const gambarData = snapshot.docs.map((doc) => doc.data());
+
+      // Set judul dan tampilkan modal
+      setGambarList(gambarData);
+      setJudulModal(label || "Galeri");
+      setShowModal(true);
+    } catch (e) {
+      console.error("Gagal ambil galeri:", e);
+    }
   };
 
   // Fungsi untuk membuat kode waktu sekarang (ddmmyyyyHHMM)
@@ -168,6 +206,9 @@ const AdminPekerjaanFisikListPage = () => {
         snapshot.docs.map(async (docSnap) => {
           const pekerjaan = docSnap.data();
           let perusahaanNama = "-";
+          let gambarThumbnail = null;
+
+          // Ambil nama perusahaan
           try {
             const perusahaanRef = doc(
               db,
@@ -181,13 +222,36 @@ const AdminPekerjaanFisikListPage = () => {
           } catch (e) {
             console.error("Gagal mengambil nama perusahaan:", e);
           }
+
+          // Ambil gambar thumbnail dari koleksi galeri
+          try {
+            const galeriRef = collection(db, "galeri");
+            const q = query(
+              galeriRef,
+              where("id_pekerjaan", "==", docSnap.id),
+              where("thumbnail", "==", true), // ambil yang thumbnail
+              limit(1)
+            );
+            const galeriSnapshot = await getDocs(q);
+            if (!galeriSnapshot.empty) {
+              const galeriDocData = galeriSnapshot.docs[0].data();
+              gambarThumbnail = galeriDocData.url_gambar; // simpan URL-nya
+            }
+          } catch (e) {
+            console.error("Gagal mengambil gambar galeri:", e);
+          }
+
+          
+          console.log("Pekerjaan:", docSnap.id, "gambar:", gambarThumbnail);
           return {
             id: docSnap.id,
             ...pekerjaan,
             perusahaan_nama: perusahaanNama,
+            gambar: gambarThumbnail, // thumbnail jika ada
           };
         })
       );
+
       setPekerjaanList(data);
     } catch (err) {
       console.error("Gagal mengambil data pekerjaan fisik:", err);
@@ -222,6 +286,43 @@ const AdminPekerjaanFisikListPage = () => {
     });
   };
 
+  const handleDeleteGambar = async (item) => {
+  const konfirmasi = window.confirm("Yakin ingin menghapus gambar ini?");
+  if (!konfirmasi) return;
+
+  try {
+    const q = query(
+      collection(db, "galeri"),
+      where("url_gambar", "==", item.url_gambar)
+    );
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) {
+      alert("Gambar tidak ditemukan di database.");
+      return;
+    }
+
+    // Hapus semua dokumen yang cocok (meskipun seharusnya hanya satu)
+    await Promise.all(
+      snapshot.docs.map(async (docu) => {
+        await deleteDoc(doc(db, "galeri", docu.id));
+      })
+    );
+
+    // Jika ingin hapus dari Cloudinary juga (aktifkan jika kamu punya public_id)
+    await axios.post("/api/delete-cloudinary", { public_id: item.public_id });
+
+    // Update state setelah berhasil hapus
+    setGambarList((prev) =>
+      prev.filter((g) => g.url_gambar !== item.url_gambar)
+    );
+  } catch (e) {
+    console.error("Gagal hapus gambar:", e);
+    alert("Terjadi kesalahan saat menghapus gambar.");
+  }
+};
+
+
   const columns = [
     {
       name: "Perusahaan",
@@ -244,6 +345,28 @@ const AdminPekerjaanFisikListPage = () => {
       wrap: true,
       grow: 2,
     },
+   {
+  name: "Galeri",
+  selector: (row) => row.gambar,
+  cell: (row) => (
+    <button
+      className="hover:opacity-80 transition"
+    >
+      {row.gambar ? (
+        <img
+          src={row.gambar}
+          alt="Gambar"
+          className="w-auto h-28 object-cover rounded"
+        />
+      ) : (
+        <span className="text-gray-400 italic">Tidak ada gambar</span>
+      )}
+    </button>
+  ),
+  grow: 1,
+  wrap: true,
+},
+
     {
       name: "Dibuat",
       selector: (row) => formatDate(row.created_at),
@@ -254,26 +377,39 @@ const AdminPekerjaanFisikListPage = () => {
           {
             name: "Aksi",
             cell: (row) => (
-              <div className="flex flex-col sm:flex-row gap-2">
-                <Link
-                  to={`/user/pekerjaan-fisik/edit/${row.id}`}
-                  className="group bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm flex items-center justify-center transition-all duration-300"
-                >
-                  <span className="group-hover:hidden">
-                    <PencilLine className="w-4 h-4" />
-                  </span>
-                  <span className="hidden group-hover:inline">Ubah</span>
-                </Link>
+              <div className="flex  sm:flex-col gap-2">
+                <div className="flex gap-2 ">
+                  <Link
+                    to={`/user/pekerjaan-fisik/edit/${row.id}`}
+                    className="group bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm flex items-center justify-center transition-all duration-300"
+                  >
+                    <span className="group-hover:hidden">
+                      <PencilLine className="w-4 h-4" />
+                    </span>
+                    <span className="hidden group-hover:inline">Ubah</span>
+                  </Link>
 
-                <button
-                  onClick={() => handleDelete(row.id)}
-                  className="group bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm flex items-center justify-center transition-all duration-300"
-                >
-                  <span className="group-hover:hidden">
-                    <Trash2 className="w-4 h-4" />
-                  </span>
-                  <span className="hidden group-hover:inline">Hapus</span>
-                </button>
+                  <button
+                    onClick={() => handleDelete(row.id)}
+                    className="group bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm flex items-center justify-center transition-all duration-300"
+                  >
+                    <span className="group-hover:hidden">
+                      <Trash2 className="w-4 h-4" />
+                    </span>
+                    <span className="hidden group-hover:inline">Hapus</span>
+                  </button>
+                </div>
+                <div>
+                  <button
+                    onClick={() => openGaleriModal(row.id, row.jenis_pekerjaan)}
+                    className="group bg-blue-600 hover:bg-blue-700 w-full text-white px-3 py-1 rounded text-sm flex items-center justify-center transition-all duration-300"
+                  >
+                    <span className="group-hover:hidden">
+                      <GalleryHorizontal className="w-4 h-4" />
+                    </span>
+                    <span className="hidden group-hover:inline">Galeri</span>
+                  </button>
+                </div>
               </div>
             ),
           },
@@ -344,6 +480,124 @@ const AdminPekerjaanFisikListPage = () => {
           noDataComponent="Belum ada data pekerjaan fisik"
         />
       </div>
+
+      {showModal && (
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-60 flex items-center justify-center px-4">
+          <div className="bg-white rounded-lg shadow-lg max-w-5xl w-full p-6 overflow-hidden max-h-[90vh] relative">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-3xl font-extrabold">{judulModal}</h2>
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-gray-500 hover:text-red-500 text-xl font-bold"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="flex flex-col mt-8 md:flex-row gap-4 h-[75vh]">
+              {/* Kolom Kiri: Detail Informasi */}
+              <div className="md:w-1/2 overflow-y-auto pr-4 border-r">
+                <div className="space-y-2 text-lg">
+                  <p>
+                    <span className="font-semibold">Perusahaan:</span>{" "}
+                    {selectedData?.perusahaan_nama || "-"}
+                  </p>
+                  <p>
+                    <span className="font-semibold">Jenis Pekerjaan:</span>{" "}
+                    {selectedData?.jenis_pekerjaan || "-"}
+                  </p>
+                  <p>
+                    <span className="font-semibold">Sekolah:</span>{" "}
+                    {selectedData?.sekolah || "-"}
+                  </p>
+                  <p>
+                    <span className="font-semibold">Deskripsi:</span>{" "}
+                    {selectedData?.deskripsi || "-"}
+                  </p>
+                  <p>
+                    <span className="font-semibold">Tanggal Dibuat:</span>{" "}
+                    {formatDate(selectedData?.created_at)}
+                  </p>
+                  {/* Tambahkan informasi lain sesuai kebutuhan */}
+                </div>
+              </div>
+
+              {/* Kolom Kanan: Galeri */}
+              <div className="md:w-1/2 relative">
+                {gambarList.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-4 overflow-y-auto max-h-full pr-2 pb-14">
+                    {gambarList.map((item, index) => (
+                      <div
+                        key={index}
+                        className="border rounded overflow-hidden relative group"
+                      >
+                        {/* Gambar */}
+                        <img
+                          src={item.url_gambar}
+                          alt={`Gambar ${index}`}
+                          className="w-full h-32 object-cover"
+                        />
+
+                        {/* Keterangan */}
+                        <p className="text-xs text-center p-1">
+                          {item.keterangan || "-"}
+                        </p>
+
+                        {/* Overlay saat hover */}
+                        <div className="hidden group-hover:flex absolute top-0 left-0 w-full h-full bg-black bg-opacity-40 backdrop-blur-sm items-center justify-center gap-2 transition-all duration-300">
+                          <button
+                            onClick={() => handleZoom(item.url_gambar)}
+                            className="bg-white p-2 rounded shadow hover:bg-gray-100"
+                            title="Lihat Besar"
+                          >
+                            🔍
+                          </button>
+
+                          <button
+                            onClick={() => handleDeleteGambar(item)}
+                            className="bg-red-600 text-white p-2 rounded shadow hover:bg-red-700"
+                            title="Hapus Gambar"
+                          >
+                            🗑
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-sm italic">
+                    Tidak ada gambar untuk pekerjaan ini.
+                  </p>
+                )}
+
+                {/* Tombol Tambah Gambar di Pojok Kanan Bawah */}
+                <div className="absolute bottom-0 right-0 p-2">
+                  <Link
+                    to={`/user/pekerjaan-fisik/galeri/tambah/${selectedData?.id}`}
+                    className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded shadow"
+                  >
+                    + Tambah Gambar
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {zoomImageUrl && (
+        <div
+          className="fixed inset-0 z-50 bg-black bg-opacity-70 flex items-center justify-center"
+          onClick={closeZoom}
+        >
+          <img
+            src={zoomImageUrl}
+            alt="Zoom Gambar"
+            className="max-w-3xl max-h-[80vh] object-contain rounded shadow-lg"
+          />
+        </div>
+      )}
+
       {showExportModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
@@ -374,7 +628,6 @@ const AdminPekerjaanFisikListPage = () => {
                 />
                 Semua data
               </label>
-              
             </div>
 
             {/* Filter tanggal */}
