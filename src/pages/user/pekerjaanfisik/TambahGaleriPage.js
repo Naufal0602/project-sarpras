@@ -79,6 +79,7 @@ export default function UploadForm() {
             </span>
             <input
               type="file"
+              accept="image/*"
               multiple
               onChange={(e) => {
                 const selected = Array.from(e.target.files);

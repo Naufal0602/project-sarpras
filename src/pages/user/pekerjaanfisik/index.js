@@ -8,13 +8,19 @@ import {
   query,
   where,
   limit,
+  updateDoc,
 } from "firebase/firestore";
 import { db } from "../../../services/firebase";
 import Navbar from "../../../components/Navbar";
 import Sidebar from "../../../components/SideBar";
 import { Link } from "react-router-dom";
 import DataTable from "react-data-table-component";
-import { PencilLine, Trash2, GalleryHorizontal } from "lucide-react";
+import {
+  PencilLine,
+  Trash2,
+  GalleryHorizontal,
+  Fullscreen,
+} from "lucide-react";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import jsPDF from "jspdf";
@@ -68,27 +74,36 @@ const AdminPekerjaanFisikListPage = () => {
   };
 
   const openGaleriModal = async (id, label) => {
-    try {
-      // Ambil data pekerjaan berdasarkan ID
-      const pekerjaan = pekerjaanList.find((item) => item.id === id);
-      setSelectedData(pekerjaan); // untuk detail di modal
+  try {
+    // Ambil data pekerjaan berdasarkan ID
+    const pekerjaan = pekerjaanList.find((item) => item.id === id);
+    setSelectedData(pekerjaan); // untuk detail di modal
 
-      // Ambil data galeri dari Firestore
-      const q = query(
-        collection(db, "galeri"),
-        where("id_pekerjaan", "==", id)
-      );
-      const snapshot = await getDocs(q);
-      const gambarData = snapshot.docs.map((doc) => doc.data());
+    // Ambil data galeri dari Firestore
+    const q = query(
+      collection(db, "galeri"),
+      where("id_pekerjaan", "==", id)
+    );
+    const snapshot = await getDocs(q);
 
-      // Set judul dan tampilkan modal
-      setGambarList(gambarData);
-      setJudulModal(label || "Galeri");
-      setShowModal(true);
-    } catch (e) {
-      console.error("Gagal ambil galeri:", e);
-    }
-  };
+    // Tambahkan doc.id ke setiap data
+    const gambarData = snapshot.docs.map((doc) => ({
+      id: doc.id, // ← penting: tambahkan ID dokumen Firestore
+      ...doc.data()
+    }));
+
+    // Set state
+    setGambarList(gambarData);
+    setJudulModal(label || "Galeri");
+    setShowModal(true);
+
+    // Debug log
+    console.log("✅ Gambar berhasil dimuat:", gambarData);
+  } catch (e) {
+    console.error("❌ Gagal ambil galeri:", e);
+  }
+};
+
 
   // Fungsi untuk membuat kode waktu sekarang (ddmmyyyyHHMM)
   const getFormattedNow = () => {
@@ -241,7 +256,6 @@ const AdminPekerjaanFisikListPage = () => {
             console.error("Gagal mengambil gambar galeri:", e);
           }
 
-          
           console.log("Pekerjaan:", docSnap.id, "gambar:", gambarThumbnail);
           return {
             id: docSnap.id,
@@ -263,6 +277,38 @@ const AdminPekerjaanFisikListPage = () => {
   useEffect(() => {
     fetchPekerjaan();
   }, []);
+
+  const handleSetThumbnail = async (id_pekerjaan, idGambarDipilih) => {
+    try {
+      console.log("🔍 Memulai proses set thumbnail...");
+      console.log("🆔 ID Pekerjaan:", id_pekerjaan);
+      console.log("🖼️ ID Gambar yang Dipilih:", idGambarDipilih);
+
+      const galeriRef = collection(db, "galeri");
+      const q = query(galeriRef, where("id_pekerjaan", "==", id_pekerjaan));
+      const snapshot = await getDocs(q);
+
+      console.log(`📦 Jumlah gambar ditemukan: ${snapshot.size}`);
+
+      const batchUpdate = snapshot.docs.map(async (docSnap) => {
+        const isSelected = docSnap.id === idGambarDipilih;
+
+        console.log(`➡️ Update ${docSnap.id}: thumbnail = ${isSelected}`);
+
+        await updateDoc(doc(db, "galeri", docSnap.id), {
+          thumbnail: isSelected,
+        });
+      });
+
+      await Promise.all(batchUpdate);
+
+      console.log("✅ Semua update selesai.");
+      alert("Thumbnail berhasil diatur!");
+    } catch (error) {
+      console.error("❌ Gagal atur thumbnail:", error);
+      alert("Gagal mengatur thumbnail.");
+    }
+  };
 
   const handleDelete = async (id) => {
     const confirm = window.confirm("Yakin ingin menghapus pekerjaan ini?");
@@ -287,41 +333,45 @@ const AdminPekerjaanFisikListPage = () => {
   };
 
   const handleDeleteGambar = async (item) => {
-  const konfirmasi = window.confirm("Yakin ingin menghapus gambar ini?");
-  if (!konfirmasi) return;
+    const konfirmasi = window.confirm("Yakin ingin menghapus gambar ini?");
+    if (!konfirmasi) return;
 
-  try {
-    const q = query(
-      collection(db, "galeri"),
-      where("url_gambar", "==", item.url_gambar)
-    );
-    const snapshot = await getDocs(q);
+    try {
+      // 1. Hapus dari Firestore berdasarkan URL
+      const q = query(
+        collection(db, "galeri"),
+        where("url_gambar", "==", item.url_gambar)
+      );
+      const snapshot = await getDocs(q);
 
-    if (snapshot.empty) {
-      alert("Gambar tidak ditemukan di database.");
-      return;
+      if (snapshot.empty) {
+        alert("Gambar tidak ditemukan di database.");
+        return;
+      }
+
+      // Hapus semua dokumen yang cocok
+      await Promise.all(
+        snapshot.docs.map(async (docu) => {
+          await deleteDoc(doc(db, "galeri", docu.id));
+        })
+      );
+
+      // 2. Hapus dari Cloudinary menggunakan public_id
+      await axios.post("http://localhost:3001/api/cloudinary", {
+        public_id: item.public_id,
+      });
+
+      // 3. Update tampilan gambar di UI
+      setGambarList((prev) =>
+        prev.filter((g) => g.url_gambar !== item.url_gambar)
+      );
+
+      alert("Gambar berhasil dihapus.");
+    } catch (e) {
+      console.error("Gagal hapus gambar:", e);
+      alert("Terjadi kesalahan saat menghapus gambar.");
     }
-
-    // Hapus semua dokumen yang cocok (meskipun seharusnya hanya satu)
-    await Promise.all(
-      snapshot.docs.map(async (docu) => {
-        await deleteDoc(doc(db, "galeri", docu.id));
-      })
-    );
-
-    // Jika ingin hapus dari Cloudinary juga (aktifkan jika kamu punya public_id)
-    await axios.post("/api/delete-cloudinary", { public_id: item.public_id });
-
-    // Update state setelah berhasil hapus
-    setGambarList((prev) =>
-      prev.filter((g) => g.url_gambar !== item.url_gambar)
-    );
-  } catch (e) {
-    console.error("Gagal hapus gambar:", e);
-    alert("Terjadi kesalahan saat menghapus gambar.");
-  }
-};
-
+  };
 
   const columns = [
     {
@@ -345,27 +395,25 @@ const AdminPekerjaanFisikListPage = () => {
       wrap: true,
       grow: 2,
     },
-   {
-  name: "Galeri",
-  selector: (row) => row.gambar,
-  cell: (row) => (
-    <button
-      className="hover:opacity-80 transition"
-    >
-      {row.gambar ? (
-        <img
-          src={row.gambar}
-          alt="Gambar"
-          className="w-auto h-28 object-cover rounded"
-        />
-      ) : (
-        <span className="text-gray-400 italic">Tidak ada gambar</span>
-      )}
-    </button>
-  ),
-  grow: 1,
-  wrap: true,
-},
+    {
+      name: "Galeri",
+      selector: (row) => row.gambar,
+      cell: (row) => (
+        <button className="hover:opacity-80 transition">
+          {row.gambar ? (
+            <img
+              src={row.gambar}
+              alt="Gambar"
+              className="w-auto h-28 object-cover rounded"
+            />
+          ) : (
+            <span className="text-gray-400 italic">Tidak ada gambar</span>
+          )}
+        </button>
+      ),
+      grow: 1,
+      wrap: true,
+    },
 
     {
       name: "Dibuat",
@@ -550,7 +598,25 @@ const AdminPekerjaanFisikListPage = () => {
                             className="bg-white p-2 rounded shadow hover:bg-gray-100"
                             title="Lihat Besar"
                           >
-                            🔍
+                            <Fullscreen />
+                          </button>
+
+                          {/* Tombol Jadikan Thumbnail */}
+                          <button
+                            onClick={() => {
+                              console.log("⭐ Menjadikan thumbnail:");
+                              console.log(item);
+                              console.log(
+                                "  🆔 id_pekerjaan:",
+                                item.id_pekerjaan
+                              );
+                              console.log("  🖼️ id_gambar:", item.id);
+                              handleSetThumbnail(item.id_pekerjaan, item.id);
+                            }}
+                            className="bg-yellow-500 text-white p-2 rounded shadow hover:bg-yellow-600"
+                            title="Jadikan Thumbnail"
+                          >
+                            Jadikan Thumbnail
                           </button>
 
                           <button
@@ -558,7 +624,7 @@ const AdminPekerjaanFisikListPage = () => {
                             className="bg-red-600 text-white p-2 rounded shadow hover:bg-red-700"
                             title="Hapus Gambar"
                           >
-                            🗑
+                            <Trash2 />
                           </button>
                         </div>
                       </div>
