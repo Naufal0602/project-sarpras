@@ -24,6 +24,8 @@ import UserPekerjaanFisik from "../pages/user/pekerjaanfisik/index.js";
 import TambahPekerjaanFisikPage from "../pages/user/pekerjaanfisik/TambahPekerjaanFisikPage.js";
 import EditPekerjaanFisikPage from "../pages/user/pekerjaanfisik/EditPekerjaanFisikPage.js";
 import TambahGaleriPage from "../pages/user/pekerjaanfisik/TambahGaleriPage.js";
+import EditGambarPage from "../pages/user/pekerjaanfisik/EditGambarPage.js";
+
 
 import UnauthorizedPage from "../pages/errors/unauthorizedPage";
 import ProtectedRouteByRole from "../components/ProtectedRouteByRole";
@@ -62,7 +64,8 @@ const AppRouter = () => {
           <Route path="/user/pekerjaan-fisik" element={<UserPekerjaanFisik />} />
           <Route path="/user/pekerjaan-fisik/tambah" element={<TambahPekerjaanFisikPage />} />
           <Route path="/user/pekerjaan-fisik/edit/:id" element={<EditPekerjaanFisikPage />} />
-        <Route path="/user/pekerjaan-fisik/galeri/tambah/:id" element={<TambahGaleriPage />} />
+          <Route path="/user/pekerjaan-fisik/galeri/tambah/:id" element={<TambahGaleriPage />} />
+          <Route path="/edit-gambar/:id" element={<EditGambarPage />} />
 
         </Route>
 

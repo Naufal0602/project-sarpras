@@ -13,6 +13,7 @@ import { db } from "../../../services/firebase";
 import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../../../components/Navbar";
 import Sidebar from "../../../components/SideBar";
+import Loading from "../../../components/Loading";
 
 const EditPekerjaanFisikPage = () => {
   const { id } = useParams();
@@ -27,27 +28,27 @@ const EditPekerjaanFisikPage = () => {
 
   useEffect(() => {
     const fetchPerusahaan = async () => {
-  try {
-    const perusahaanRef = collection(db, "perusahaan");
-    const aktifQuery = query(perusahaanRef, where("status", "==", "aktif"));
-    const snapshot = await getDocs(aktifQuery);
+      try {
+        const perusahaanRef = collection(db, "perusahaan");
+        const aktifQuery = query(perusahaanRef, where("status", "==", "aktif"));
+        const snapshot = await getDocs(aktifQuery);
 
-    if (snapshot.empty) {
-      alert("Tidak ada perusahaan aktif yang ditemukan.");
-      return;
-    }
+        if (snapshot.empty) {
+          alert("Tidak ada perusahaan aktif yang ditemukan.");
+          return;
+        }
 
-    const data = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      nama: doc.data().nama_perusahaan,
-    }));
+        const data = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          nama: doc.data().nama_perusahaan,
+        }));
 
-    setPerusahaanOptions(data);
-  } catch (err) {
-    console.error("Gagal mengambil daftar perusahaan:", err);
-    alert("Terjadi kesalahan saat mengambil data perusahaan.");
-  }
-};
+        setPerusahaanOptions(data);
+      } catch (err) {
+        console.error("Gagal mengambil daftar perusahaan:", err);
+        alert("Terjadi kesalahan saat mengambil data perusahaan.");
+      }
+    };
 
     const fetchPekerjaanFisik = async () => {
       try {
@@ -96,6 +97,10 @@ const EditPekerjaanFisikPage = () => {
       setLoading(false);
     }
   };
+
+  if(loading){
+    return (<Loading text="Mengupdate..."/>);
+    }
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -169,7 +174,7 @@ const EditPekerjaanFisikPage = () => {
               required
             />
           </div>
-          
+
           <div className="flex gap-4">
             <button
               type="submit"

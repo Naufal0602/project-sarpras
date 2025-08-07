@@ -7,6 +7,7 @@ import LogoutButton from "../../components/LogoutButton";
 import Sidebar from "../../components/SideBar";
 import Navbar from "../../components/Navbar";
 import { Link } from "react-router-dom";
+import Loading from "../../components/Loading";
 
 const UserProfile = () => {
   const navigate = useNavigate();
@@ -51,12 +52,7 @@ const UserProfile = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-orange-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600 text-lg">Loading user profile...</p>
-        </div>
-      </div>
+      <Loading/>
     );
   }
 

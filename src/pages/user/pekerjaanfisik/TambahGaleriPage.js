@@ -5,6 +5,7 @@ import { db } from "../../../services/firebase";
 import { collection, addDoc, serverTimestamp, getDocs, query, where  } from "firebase/firestore";
 import Navbar from "../../../components/Navbar";
 import Sidebar from "../../../components/SideBar";
+import Loading from "../../../components/Loading";
 
 export default function UploadForm() {
   const { id } = useParams();
@@ -60,6 +61,11 @@ export default function UploadForm() {
       setLoading(false);
     }
   };
+
+    if(loading){
+    return (<Loading text="Mengupdate..."/>);
+    }
+
 
   return (
     <div className="flex min-h-screen">

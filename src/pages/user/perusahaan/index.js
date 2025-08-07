@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, deleteDoc, doc, query, orderBy  } from "firebase/firestore";
 import { db } from "../../../services/firebase";
 import Navbar from "../../../components/Navbar";
 import Sidebar from "../../../components/SideBar";
 import { Link } from "react-router-dom";
 import DataTable from "react-data-table-component";
-import { deleteDoc, doc } from "firebase/firestore";
 import { PencilLine, Trash2 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import Loading from "../../../components/Loading.js";
 
 const AdminPerusahaanListPage = () => {
   const [perusahaanList, setPerusahaanList] = useState([]);
@@ -21,17 +21,23 @@ const AdminPerusahaanListPage = () => {
   const isLevel2 = userData?.level === 2;
   const [exportScope, setExportScope] = useState("sebagian"); // default: sebagian
 
+
   const currentDate = new Date();
   const [selectedMonth, setSelectedMonth] = useState(
     String(currentDate.getMonth() + 1)
   );
+
   const [selectedYear, setSelectedYear] = useState(
     String(currentDate.getFullYear())
   );
 
   const fetchPerusahaan = async () => {
     try {
-      const snapshot = await getDocs(collection(db, "perusahaan"));
+      const q = query(
+        collection(db, "perusahaan"),
+        orderBy("created_at", "desc")
+      );
+      const snapshot = await getDocs(q);
       const data = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -114,56 +120,67 @@ const AdminPerusahaanListPage = () => {
   const exportToPDF = () => {
     const doc = new jsPDF();
 
-  const tanggalCetak = new Date();
-  const formattedTanggal = tanggalCetak.toLocaleDateString("id-ID", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
+    const tanggalCetak = new Date();
+    const formattedTanggal = tanggalCetak.toLocaleDateString("id-ID", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
 
-  // Header laporan
-  doc.setFontSize(16);
-  doc.setTextColor(33, 33, 33);
-  doc.text("LAPORAN DATA PERUSAHAAN", 105, 20, { align: "center" });
+    // Header laporan
+    doc.setFontSize(16);
+    doc.setTextColor(33, 33, 33);
+    doc.text("LAPORAN DATA PERUSAHAAN", 105, 20, { align: "center" });
 
-  doc.setFontSize(10);
-  doc.setTextColor(100);
-  doc.text(`Dicetak pada: ${formattedTanggal}`, 105, 27, { align: "center" });
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Dicetak pada: ${formattedTanggal}`, 105, 27, { align: "center" });
 
-  // Spasi sebelum tabel
-  doc.setLineWidth(0.5);
-  doc.setDrawColor(0);
+    // Spasi sebelum tabel
+    doc.setLineWidth(0.5);
+    doc.setDrawColor(0);
 
-  // Tabel data
-  autoTable(doc, {
-    startY: 35,
-    head: [[
-      "No", "Nama_perusahaan", "Direktur", "Alamat", "Status", "Dibuat"
-    ]],
-    body: getExportData().map((item, index) => [
-      index + 1,
-      item.nama_perusahaan,
-      item.direktur,
-      item.alamat,
-      item.status,
-      item.created_at?.toDate?.().toLocaleDateString("id-ID") ?? "-"
-    ]),
-    theme: "grid",
-    headStyles: {
-      fillColor: [249, 115, 22], // orange-500
-      textColor: [255, 255, 255],
-      halign: "center",
-    },
-    styles: {
-      fontSize: 9,
-      cellPadding: 3,
-    },
-    bodyStyles: {
-      textColor: [33, 33, 33],
-    },
-  });
+    // Tabel data
+    autoTable(doc, {
+      startY: 35,
+      head: [
+        [
+          "No",
+          "Nama_perusahaan",
+          "Direktur",
+          "Alamat",
+          "Status",
+          "Dibuat",
+          "Koordinat",
+        ],
+      ],
+      body: getExportData().map((item, index) => [
+        index + 1,
+        item.nama_perusahaan,
+        item.direktur,
+        item.alamat,
+        item.status,
+        item.created_at?.toDate?.().toLocaleDateString("id-ID") ?? "-",
+        item.latitude && item.longitude
+          ? `${item.latitude.toFixed(5)}, ${item.longitude.toFixed(5)}`
+          : "-",
+      ]),
+      theme: "grid",
+      headStyles: {
+        fillColor: [249, 115, 22], // orange-500
+        textColor: [255, 255, 255],
+        halign: "center",
+      },
+      styles: {
+        fontSize: 9,
+        cellPadding: 3,
+      },
+      bodyStyles: {
+        textColor: [33, 33, 33],
+      },
+    });
 
-  doc.save(`DataPerusahaan_${new Date().getTime()}.pdf`);
+    doc.save(`DataPerusahaan_${new Date().getTime()}.pdf`);
   };
 
   const exportToExcel = () => {
@@ -186,7 +203,6 @@ const AdminPerusahaanListPage = () => {
     const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
     saveAs(blob, `DataPerusahaan_${getFormattedNow()}.xlsx`);
   };
-
 
   const columns = [
     {
@@ -221,6 +237,28 @@ const AdminPerusahaanListPage = () => {
       name: "Dibuat",
       selector: (row) => formatDate(row.created_at),
       sortable: true,
+       sortFunction: (a, b) => {
+    // Ubah Timestamp Firebase ke milidetik
+      const dateA = a.created_at?.toDate?.().getTime?.() || 0;
+      const dateB = b.created_at?.toDate?.().getTime?.() || 0;
+      return dateB - dateA;
+       }
+    },
+    {
+      name: "Koordinat",
+      cell: (row) =>
+        row.latitude && row.longitude ? (
+          <a
+            href={`https://www.google.com/maps?q=${row.latitude},${row.longitude}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 underline"
+          >
+            {row.latitude.toFixed(5)}, {row.longitude.toFixed(5)}
+          </a>
+        ) : (
+          "-"
+        ),
     },
     ...(isLevel2
       ? [
@@ -326,6 +364,7 @@ const AdminPerusahaanListPage = () => {
           columns={columns}
           data={filteredData}
           progressPending={loading}
+          progressComponent={<Loading />}
           pagination
           highlightOnHover
           responsive

@@ -1,4 +1,12 @@
-import { Camera, Mesh, Plane, Program, Renderer, Texture, Transform } from "ogl";
+import {
+  Camera,
+  Mesh,
+  Plane,
+  Program,
+  Renderer,
+  Texture,
+  Transform,
+} from "ogl";
 import { useEffect, useRef } from "react";
 
 function debounce(func, wait) {
@@ -22,7 +30,17 @@ function autoBind(instance) {
   });
 }
 
-function createTextTexture(gl, text, font = "bold 30px monospace", color = "black") {
+function createTextTexture(
+  gl,
+  text,
+  font = "bold 30px monospace",
+  color = "black"
+) {
+
+  if (text.length > 25) {
+    text = text.slice(0, 25) + "...";
+  }
+  
   const canvas = document.createElement("canvas");
   const context = canvas.getContext("2d");
   context.font = font;
@@ -43,7 +61,14 @@ function createTextTexture(gl, text, font = "bold 30px monospace", color = "blac
 }
 
 class Title {
-  constructor({ gl, plane, renderer, text, textColor = "#545050", font = "30px sans-serif" }) {
+  constructor({
+    gl,
+    plane,
+    renderer,
+    text,
+    textColor = "#000000ff",
+    font = "30px sans-serif",
+  }) {
     autoBind(this);
     this.gl = gl;
     this.plane = plane;
@@ -54,7 +79,12 @@ class Title {
     this.createMesh();
   }
   createMesh() {
-    const { texture, width, height } = createTextTexture(this.gl, this.text, this.font, this.textColor);
+    const { texture, width, height } = createTextTexture(
+      this.gl,
+      this.text,
+      this.font,
+      this.textColor
+    );
     const geometry = new Plane(this.gl);
     const program = new Program(this.gl, {
       vertex: `
@@ -196,7 +226,10 @@ class Media {
     img.src = this.image;
     img.onload = () => {
       texture.image = img;
-      this.program.uniforms.uImageSizes.value = [img.naturalWidth, img.naturalHeight];
+      this.program.uniforms.uImageSizes.value = [
+        img.naturalWidth,
+        img.naturalHeight,
+      ];
     };
   }
   createMesh() {
@@ -262,13 +295,21 @@ class Media {
     if (viewport) {
       this.viewport = viewport;
       if (this.plane.program.uniforms.uViewportSizes) {
-        this.plane.program.uniforms.uViewportSizes.value = [this.viewport.width, this.viewport.height];
+        this.plane.program.uniforms.uViewportSizes.value = [
+          this.viewport.width,
+          this.viewport.height,
+        ];
       }
     }
     this.scale = this.screen.height / 1500;
-    this.plane.scale.y = (this.viewport.height * (900 * this.scale)) / this.screen.height;
-    this.plane.scale.x = (this.viewport.width * (700 * this.scale)) / this.screen.width;
-    this.plane.program.uniforms.uPlaneSizes.value = [this.plane.scale.x, this.plane.scale.y];
+    this.plane.scale.y =
+      (this.viewport.height * (900 * this.scale)) / this.screen.height;
+    this.plane.scale.x =
+      (this.viewport.width * (700 * this.scale)) / this.screen.width;
+    this.plane.program.uniforms.uPlaneSizes.value = [
+      this.plane.scale.x,
+      this.plane.scale.y,
+    ];
     this.padding = 2;
     this.width = this.plane.scale.x + this.padding;
     this.widthTotal = this.width * this.length;
@@ -277,6 +318,32 @@ class Media {
 }
 
 class App {
+  onClick = (e) => {
+    const { left, top, width, height } = this.gl.canvas.getBoundingClientRect();
+    const x = ((e.clientX - left) / width) * 2 - 1;
+    const y = -((e.clientY - top) / height) * 2 + 1;
+
+    // Buat ray dari kamera
+    const mouse = [x, y];
+
+    this.medias.forEach((media) => {
+      const mesh = media.plane;
+      const scale = mesh.scale;
+      const position = mesh.position;
+
+      // Cek apakah mouse x,y berada dalam area gambar (simple bounding box check)
+      const inX =
+        mouse[0] >= (position.x - scale.x / 2) / (this.viewport.width / 2) &&
+        mouse[0] <= (position.x + scale.x / 2) / (this.viewport.width / 2);
+      const inY =
+        mouse[1] >= (position.y - scale.y / 2) / (this.viewport.height / 2) &&
+        mouse[1] <= (position.y + scale.y / 2) / (this.viewport.height / 2);
+
+      if (inX && inY) {
+        this.onImageClick(media);
+      }
+    });
+  };
   constructor(
     container,
     {
@@ -287,9 +354,11 @@ class App {
       font = "bold 30px Figtree",
       scrollSpeed = 2,
       scrollEase = 0.05,
+      onImageClick = () => {},
     } = {}
   ) {
     document.documentElement.classList.remove("no-js");
+    this.onImageClick = onImageClick;
     this.container = container;
     this.scrollSpeed = scrollSpeed;
     this.scroll = { ease: scrollEase, current: 0, target: 0, last: 0 };
@@ -325,18 +394,54 @@ class App {
   }
   createMedias(items, bend = 1, textColor, borderRadius, font) {
     const defaultItems = [
-      { image: `https://picsum.photos/seed/1/800/600?grayscale`, text: "Bridge" },
-      { image: `https://picsum.photos/seed/2/800/600?grayscale`, text: "Desk Setup" },
-      { image: `https://picsum.photos/seed/3/800/600?grayscale`, text: "Waterfall" },
-      { image: `https://picsum.photos/seed/4/800/600?grayscale`, text: "Strawberries" },
-      { image: `https://picsum.photos/seed/5/800/600?grayscale`, text: "Deep Diving" },
-      { image: `https://picsum.photos/seed/16/800/600?grayscale`, text: "Train Track" },
-      { image: `https://picsum.photos/seed/17/800/600?grayscale`, text: "Santorini" },
-      { image: `https://picsum.photos/seed/8/800/600?grayscale`, text: "Blurry Lights" },
-      { image: `https://picsum.photos/seed/9/800/600?grayscale`, text: "New York" },
-      { image: `https://picsum.photos/seed/10/800/600?grayscale`, text: "Good Boy" },
-      { image: `https://picsum.photos/seed/21/800/600?grayscale`, text: "Coastline" },
-      { image: `https://picsum.photos/seed/12/800/600?grayscale`, text: "Palm Trees" },
+      {
+        image: `https://picsum.photos/seed/1/800/600?grayscale`,
+        text: "Bridge",
+      },
+      {
+        image: `https://picsum.photos/seed/2/800/600?grayscale`,
+        text: "Desk Setup",
+      },
+      {
+        image: `https://picsum.photos/seed/3/800/600?grayscale`,
+        text: "Waterfall",
+      },
+      {
+        image: `https://picsum.photos/seed/4/800/600?grayscale`,
+        text: "Strawberries",
+      },
+      {
+        image: `https://picsum.photos/seed/5/800/600?grayscale`,
+        text: "Deep Diving",
+      },
+      {
+        image: `https://picsum.photos/seed/16/800/600?grayscale`,
+        text: "Train Track",
+      },
+      {
+        image: `https://picsum.photos/seed/17/800/600?grayscale`,
+        text: "Santorini",
+      },
+      {
+        image: `https://picsum.photos/seed/8/800/600?grayscale`,
+        text: "Blurry Lights",
+      },
+      {
+        image: `https://picsum.photos/seed/9/800/600?grayscale`,
+        text: "New York",
+      },
+      {
+        image: `https://picsum.photos/seed/10/800/600?grayscale`,
+        text: "Good Boy",
+      },
+      {
+        image: `https://picsum.photos/seed/21/800/600?grayscale`,
+        text: "Coastline",
+      },
+      {
+        image: `https://picsum.photos/seed/12/800/600?grayscale`,
+        text: "Palm Trees",
+      },
     ];
     const galleryItems = items && items.length ? items : defaultItems;
     this.mediasImages = galleryItems.concat(galleryItems);
@@ -400,11 +505,17 @@ class App {
     const width = height * this.camera.aspect;
     this.viewport = { width, height };
     if (this.medias) {
-      this.medias.forEach((media) => media.onResize({ screen: this.screen, viewport: this.viewport }));
+      this.medias.forEach((media) =>
+        media.onResize({ screen: this.screen, viewport: this.viewport })
+      );
     }
   }
   update() {
-    this.scroll.current = lerp(this.scroll.current, this.scroll.target, this.scroll.ease);
+    this.scroll.current = lerp(
+      this.scroll.current,
+      this.scroll.target,
+      this.scroll.ease
+    );
     const direction = this.scroll.current > this.scroll.last ? "right" : "left";
     if (this.medias) {
       this.medias.forEach((media) => media.update(this.scroll, direction));
@@ -419,6 +530,8 @@ class App {
     this.boundOnTouchDown = this.onTouchDown.bind(this);
     this.boundOnTouchMove = this.onTouchMove.bind(this);
     this.boundOnTouchUp = this.onTouchUp.bind(this);
+    this.boundOnClick = this.onClick.bind(this);
+    this.gl.canvas.addEventListener("click", this.boundOnClick);
     window.addEventListener("resize", this.boundOnResize);
     window.addEventListener("mousewheel", this.boundOnWheel);
     window.addEventListener("wheel", this.boundOnWheel);
@@ -431,6 +544,7 @@ class App {
   }
   destroy() {
     window.cancelAnimationFrame(this.raf);
+    this.gl.canvas.removeEventListener("click", this.boundOnClick);
     window.removeEventListener("resize", this.boundOnResize);
     window.removeEventListener("mousewheel", this.boundOnWheel);
     window.removeEventListener("wheel", this.boundOnWheel);
@@ -440,7 +554,11 @@ class App {
     window.removeEventListener("touchstart", this.boundOnTouchDown);
     window.removeEventListener("touchmove", this.boundOnTouchMove);
     window.removeEventListener("touchend", this.boundOnTouchUp);
-    if (this.renderer && this.renderer.gl && this.renderer.gl.canvas.parentNode) {
+    if (
+      this.renderer &&
+      this.renderer.gl &&
+      this.renderer.gl.canvas.parentNode
+    ) {
       this.renderer.gl.canvas.parentNode.removeChild(this.renderer.gl.canvas);
     }
   }
@@ -454,13 +572,26 @@ export default function CircularGallery({
   font = "bold 30px Figtree",
   scrollSpeed = 2,
   scrollEase = 0.05,
+  onImageClick,
 }) {
   const containerRef = useRef(null);
+
   useEffect(() => {
-    const app = new App(containerRef.current, { items, bend, textColor, borderRadius, font, scrollSpeed, scrollEase });
+    const app = new App(containerRef.current, {
+      items,
+      bend,
+      textColor,
+      borderRadius,
+      font,
+      scrollSpeed,
+      scrollEase,
+      onImageClick, // Kirim callback ke App
+    });
     return () => {
       app.destroy();
     };
-  }, [items, bend, textColor, borderRadius, font, scrollSpeed, scrollEase]);
+  }, [items, bend, textColor, borderRadius, font, scrollSpeed, scrollEase, onImageClick]);
+
   return <div className="w-full h-full overflow-hidden cursor-grab active:cursor-grabbing" ref={containerRef} />;
 }
+

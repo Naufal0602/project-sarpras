@@ -9,6 +9,7 @@ import {
   where,
   limit,
   updateDoc,
+  orderBy,
 } from "firebase/firestore";
 import { db } from "../../../services/firebase";
 import Navbar from "../../../components/Navbar";
@@ -20,12 +21,16 @@ import {
   Trash2,
   GalleryHorizontal,
   Fullscreen,
+  GalleryThumbnails,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import Loading from "../../../components/Loading";
+
 
 const AdminPekerjaanFisikListPage = () => {
   const [pekerjaanList, setPekerjaanList] = useState([]);
@@ -41,17 +46,19 @@ const AdminPekerjaanFisikListPage = () => {
   const [gambarList, setGambarList] = useState([]);
   const [judulModal, setJudulModal] = useState("");
   const [zoomImageUrl, setZoomImageUrl] = useState(null);
-
+  const navigate = useNavigate();
+  const [activeImageId, setActiveImageId] = useState(null);
+  
   const bagianUser = role?.includes("user-")
     ? role.replace("user-", "")
     : "semua"; // admin lihat semua
-
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+    
+    const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
   const getFilteredExportData = () => {
     let data = [...filteredData];
-
+    
     if (rangeType === "date") {
       const start = new Date(selectedYear, selectedMonth - 1, 1);
       const end = new Date(selectedYear, selectedMonth, 0, 23, 59, 59, 999); // akhir bulan
@@ -61,10 +68,10 @@ const AdminPekerjaanFisikListPage = () => {
         return createdAt && createdAt >= start && createdAt <= end;
       });
     }
-
+    
     return data;
   };
-
+  
   const handleZoom = (url) => {
     setZoomImageUrl(url);
   };
@@ -74,42 +81,41 @@ const AdminPekerjaanFisikListPage = () => {
   };
 
   const openGaleriModal = async (id, label) => {
-  try {
-    // Ambil data pekerjaan berdasarkan ID
-    const pekerjaan = pekerjaanList.find((item) => item.id === id);
-    setSelectedData(pekerjaan); // untuk detail di modal
+    try {
+      // Ambil data pekerjaan berdasarkan ID
+      const pekerjaan = pekerjaanList.find((item) => item.id === id);
+      setSelectedData(pekerjaan); // untuk detail di modal
+      
+      // Ambil data galeri dari Firestore
+      const q = query(
+        collection(db, "galeri"),
+        where("id_pekerjaan", "==", id)
+      );
+      const snapshot = await getDocs(q);
+      
+      // Tambahkan doc.id ke setiap data
+      const gambarData = snapshot.docs.map((doc) => ({
+        id: doc.id, // ← penting: tambahkan ID dokumen Firestore
+        ...doc.data(),
+      }));
 
-    // Ambil data galeri dari Firestore
-    const q = query(
-      collection(db, "galeri"),
-      where("id_pekerjaan", "==", id)
-    );
-    const snapshot = await getDocs(q);
+      // Set state
+      setGambarList(gambarData);
+      setJudulModal(label || "Galeri");
+      setShowModal(true);
 
-    // Tambahkan doc.id ke setiap data
-    const gambarData = snapshot.docs.map((doc) => ({
-      id: doc.id, // ← penting: tambahkan ID dokumen Firestore
-      ...doc.data()
-    }));
-
-    // Set state
-    setGambarList(gambarData);
-    setJudulModal(label || "Galeri");
-    setShowModal(true);
-
-    // Debug log
-    console.log("✅ Gambar berhasil dimuat:", gambarData);
-  } catch (e) {
-    console.error("❌ Gagal ambil galeri:", e);
-  }
-};
-
+      // Debug log
+      console.log("✅ Gambar berhasil dimuat:", gambarData);
+    } catch (e) {
+      console.error("❌ Gagal ambil galeri:", e);
+    }
+  };
 
   // Fungsi untuk membuat kode waktu sekarang (ddmmyyyyHHMM)
   const getFormattedNow = () => {
     const now = new Date();
     const pad = (num) => String(num).padStart(2, "0");
-
+    
     return (
       pad(now.getDate()) +
       pad(now.getMonth() + 1) +
@@ -118,18 +124,18 @@ const AdminPekerjaanFisikListPage = () => {
       pad(now.getMinutes())
     );
   };
-
+  
   const exportToPDF = () => {
     const exportData = getFilteredExportData();
     const doc = new jsPDF();
-
+    
     const now = new Date();
     const formattedDate = now.toLocaleDateString("id-ID", {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
     });
-
+    
     // Judul dan tanggal cetak
     // Judul di tengah
     doc.setFontSize(16);
@@ -139,7 +145,7 @@ const AdminPekerjaanFisikListPage = () => {
     const textWidth = doc.getTextWidth(title);
     const x = (pageWidth - textWidth) / 2;
     doc.text(title, x, 15);
-
+    
     doc.setFontSize(10);
     doc.setTextColor(0, 0, 0);
     doc.text(`Tanggal Dicetak: ${formattedDate}`, 14, 22);
@@ -152,7 +158,7 @@ const AdminPekerjaanFisikListPage = () => {
       "Bagian",
       "Dibuat",
     ];
-
+    
     const tableRows = exportData.map((row) => [
       row.perusahaan_nama || "-",
       row.jenis_pekerjaan || "-",
@@ -161,7 +167,7 @@ const AdminPekerjaanFisikListPage = () => {
       row.bagian || "-",
       formatDate(row.created_at),
     ]);
-
+    
     autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
@@ -204,7 +210,7 @@ const AdminPekerjaanFisikListPage = () => {
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Pekerjaan Fisik");
-
+    
     const excelBuffer = XLSX.write(workbook, {
       bookType: "xlsx",
       type: "array",
@@ -213,66 +219,67 @@ const AdminPekerjaanFisikListPage = () => {
     saveAs(blob, `DataPekerjaanFisik_${getFormattedNow()}.xlsx`);
     setShowExportModal(false);
   };
+  
+const fetchPekerjaan = async () => {
+  try {
+    const q = query(
+      collection(db, "pekerjaan_fisik"),
+      orderBy("created_at", "desc") // urutkan berdasarkan waktu dibuat (terbaru di atas)
+    );
+    const snapshot = await getDocs(q);
 
-  const fetchPekerjaan = async () => {
-    try {
-      const snapshot = await getDocs(collection(db, "pekerjaan_fisik"));
-      const data = await Promise.all(
-        snapshot.docs.map(async (docSnap) => {
-          const pekerjaan = docSnap.data();
-          let perusahaanNama = "-";
-          let gambarThumbnail = null;
+    const data = await Promise.all(
+      snapshot.docs.map(async (docSnap) => {
+        const pekerjaan = docSnap.data();
+        let perusahaanNama = "-";
+        let gambarThumbnail = null;
 
-          // Ambil nama perusahaan
-          try {
-            const perusahaanRef = doc(
-              db,
-              "perusahaan",
-              pekerjaan.perusahaan_id
-            );
-            const perusahaanDoc = await getDoc(perusahaanRef);
-            if (perusahaanDoc.exists()) {
-              perusahaanNama = perusahaanDoc.data().nama_perusahaan;
-            }
-          } catch (e) {
-            console.error("Gagal mengambil nama perusahaan:", e);
+        // Ambil nama perusahaan
+        try {
+          const perusahaanRef = doc(db, "perusahaan", pekerjaan.perusahaan_id);
+          const perusahaanDoc = await getDoc(perusahaanRef);
+          if (perusahaanDoc.exists()) {
+            perusahaanNama = perusahaanDoc.data().nama_perusahaan;
           }
+        } catch (e) {
+          console.error("Gagal mengambil nama perusahaan:", e);
+        }
 
-          // Ambil gambar thumbnail dari koleksi galeri
-          try {
-            const galeriRef = collection(db, "galeri");
-            const q = query(
-              galeriRef,
-              where("id_pekerjaan", "==", docSnap.id),
-              where("thumbnail", "==", true), // ambil yang thumbnail
-              limit(1)
-            );
-            const galeriSnapshot = await getDocs(q);
-            if (!galeriSnapshot.empty) {
-              const galeriDocData = galeriSnapshot.docs[0].data();
-              gambarThumbnail = galeriDocData.url_gambar; // simpan URL-nya
-            }
-          } catch (e) {
-            console.error("Gagal mengambil gambar galeri:", e);
+        // Ambil gambar thumbnail dari koleksi galeri
+        try {
+          const galeriRef = collection(db, "galeri");
+          const galeriQuery = query(
+            galeriRef,
+            where("id_pekerjaan", "==", docSnap.id),
+            where("thumbnail", "==", true),
+            limit(1)
+          );
+          const galeriSnapshot = await getDocs(galeriQuery);
+          if (!galeriSnapshot.empty) {
+            const galeriDocData = galeriSnapshot.docs[0].data();
+            gambarThumbnail = galeriDocData.url_gambar;
           }
+        } catch (e) {
+          console.error("Gagal mengambil gambar galeri:", e);
+        }
 
-          console.log("Pekerjaan:", docSnap.id, "gambar:", gambarThumbnail);
-          return {
-            id: docSnap.id,
-            ...pekerjaan,
-            perusahaan_nama: perusahaanNama,
-            gambar: gambarThumbnail, // thumbnail jika ada
-          };
-        })
-      );
+        console.log("Pekerjaan:", docSnap.id, "gambar:", gambarThumbnail);
+        return {
+          id: docSnap.id,
+          ...pekerjaan,
+          perusahaan_nama: perusahaanNama,
+          gambar: gambarThumbnail,
+        };
+      })
+    );
 
-      setPekerjaanList(data);
-    } catch (err) {
-      console.error("Gagal mengambil data pekerjaan fisik:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    setPekerjaanList(data);
+  } catch (err) {
+    console.error("Gagal mengambil data pekerjaan fisik:", err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     fetchPekerjaan();
@@ -308,6 +315,10 @@ const AdminPekerjaanFisikListPage = () => {
       console.error("❌ Gagal atur thumbnail:", error);
       alert("Gagal mengatur thumbnail.");
     }
+  };
+
+  const handleEditGambar = (idGambarDipilih) => {
+    navigate(`/edit-gambar/${idGambarDipilih}`);
   };
 
   const handleDelete = async (id) => {
@@ -522,6 +533,7 @@ const AdminPekerjaanFisikListPage = () => {
           columns={columns}
           data={filteredData}
           progressPending={loading}
+            progressComponent={<Loading />}
           pagination
           highlightOnHover
           responsive
@@ -573,11 +585,16 @@ const AdminPekerjaanFisikListPage = () => {
               {/* Kolom Kanan: Galeri */}
               <div className="md:w-1/2 relative">
                 {gambarList.length > 0 ? (
-                  <div className="grid grid-cols-2 gap-4 overflow-y-auto max-h-full pr-2 pb-14">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 overflow-y-auto max-h-full pr-2 pb-14">
                     {gambarList.map((item, index) => (
                       <div
                         key={index}
-                        className="border rounded overflow-hidden relative group"
+                        className="border rounded overflow-hidden relative group cursor-pointer"
+                        onClick={() =>
+                          setActiveImageId((prev) =>
+                            prev === item.id ? null : item.id
+                          )
+                        }
                       >
                         {/* Gambar */}
                         <img
@@ -591,36 +608,55 @@ const AdminPekerjaanFisikListPage = () => {
                           {item.keterangan || "-"}
                         </p>
 
-                        {/* Overlay saat hover */}
-                        <div className="hidden group-hover:flex absolute top-0 left-0 w-full h-full bg-black bg-opacity-40 backdrop-blur-sm items-center justify-center gap-2 transition-all duration-300">
+                        {/* Overlay saat hover dan klik */}
+                        <div
+                          className={`
+              absolute top-0 left-0 w-full h-full
+              bg-black bg-opacity-40 backdrop-blur-sm
+              items-center justify-center gap-2
+              hidden group-hover:flex
+              ${activeImageId === item.id ? "flex" : ""}
+              transition-all duration-300 z-10
+            `}
+                        >
                           <button
-                            onClick={() => handleZoom(item.url_gambar)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleZoom(item.url_gambar);
+                            }}
                             className="bg-white p-2 rounded shadow hover:bg-gray-100"
                             title="Lihat Besar"
                           >
                             <Fullscreen />
                           </button>
 
-                          {/* Tombol Jadikan Thumbnail */}
                           <button
-                            onClick={() => {
-                              console.log("⭐ Menjadikan thumbnail:");
-                              console.log(item);
-                              console.log(
-                                "  🆔 id_pekerjaan:",
-                                item.id_pekerjaan
-                              );
-                              console.log("  🖼️ id_gambar:", item.id);
+                            onClick={(e) => {
+                              e.stopPropagation();
                               handleSetThumbnail(item.id_pekerjaan, item.id);
                             }}
-                            className="bg-yellow-500 text-white p-2 rounded shadow hover:bg-yellow-600"
+                            className="bg-green-500 text-white p-2 rounded shadow hover:bg-green-600"
                             title="Jadikan Thumbnail"
                           >
-                            Jadikan Thumbnail
+                            <GalleryThumbnails />
                           </button>
 
                           <button
-                            onClick={() => handleDeleteGambar(item)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditGambar(item.id);
+                            }}
+                            className="bg-blue-500 text-white p-2 rounded shadow hover:bg-blue-600"
+                            title="Edit Keterangan"
+                          >
+                            <PencilLine />
+                          </button>
+
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteGambar(item);
+                            }}
                             className="bg-red-600 text-white p-2 rounded shadow hover:bg-red-700"
                             title="Hapus Gambar"
                           >
@@ -636,7 +672,7 @@ const AdminPekerjaanFisikListPage = () => {
                   </p>
                 )}
 
-                {/* Tombol Tambah Gambar di Pojok Kanan Bawah */}
+                {/* Tombol Tambah Gambar */}
                 <div className="absolute bottom-0 right-0 p-2">
                   <Link
                     to={`/user/pekerjaan-fisik/galeri/tambah/${selectedData?.id}`}

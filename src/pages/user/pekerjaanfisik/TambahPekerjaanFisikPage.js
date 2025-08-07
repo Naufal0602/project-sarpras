@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../../../components/Navbar";
 import Sidebar from "../../../components/SideBar";
 import { getAuth } from "firebase/auth";
+import Loading from "../../../components/Loading";
 
 const TambahPekerjaanFisikPage = () => {
   const [perusahaanId, setPerusahaanId] = useState("");
@@ -93,6 +94,11 @@ const TambahPekerjaanFisikPage = () => {
       setLoading(false);
     }
   };
+
+    if(loading){
+    return (<Loading text="Menambah"/>);
+    }
+
 
   return (
     <div className="flex min-h-screen bg-gray-50">

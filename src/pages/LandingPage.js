@@ -1,33 +1,68 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../services/firebase";
 import CircularGallery from "../components/CircularGallery";
-// import Masonry from '../components/Masonry.js';
-
 const LandingPage = () => {
+  const [showModal, setShowModal] = useState(false);
+  const [selectedPekerjaanId, setSelectedPekerjaanId] = useState(null);
+  const [galeriPekerjaan, setGaleriPekerjaan] = useState([]);
   const [galeri, setGaleri] = useState([]);
+  const [circularItems, setCircularItems] = useState([]);
   const navigate = useNavigate();
-  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     const fetchGaleri = async () => {
       try {
-        const snapshot = await getDocs(collection(db, "galeri"));
+        const q = query(
+          collection(db, "galeri"),
+          where("thumbnail", "==", true) // hanya ambil yang thumbnail === true
+        );
+        const snapshot = await getDocs(q);
+
         const data = snapshot.docs.map((doc) => ({
           id: doc.id,
           image: doc.data().url_gambar,
           text: doc.data().keterangan,
+          id_pekerjaan: doc.data().id_pekerjaan,
         }));
-        setGaleri(data);
-        setIsReady(true); // tandai bahwa data sudah siap
-      } catch (error) {
-        console.error("Gagal mengambil data galeri:", error);
+
+        setGaleri(data); // Simpan full data
+        setCircularItems(data.map(({ image, text }) => ({ image, text }))); // Hanya image + text untuk CircularGallery
+      } catch (err) {
+        console.error("Gagal fetch galeri:", err);
       }
     };
 
     fetchGaleri();
   }, []);
+
+  const handleImageClick = async (media) => {
+    const matched = galeri.find((item) => item.image === media.image);
+    const pekerjaanId = matched?.id_pekerjaan;
+
+    console.log("Gambar diklik, id_pekerjaan:", pekerjaanId);
+    if (!pekerjaanId) return;
+    console.log(selectedPekerjaanId)
+    setSelectedPekerjaanId(pekerjaanId);
+    setShowModal(true);
+
+    try {
+      const q = query(
+        collection(db, "galeri"),
+        where("id_pekerjaan", "==", pekerjaanId)
+      );
+      const snapshot = await getDocs(q);
+      const data = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        url_gambar: doc.data().url_gambar,
+        keterangan: doc.data().keterangan,
+      }));
+      setGaleriPekerjaan(data);
+    } catch (err) {
+      console.error("Gagal fetch galeri pekerjaan:", err);
+    }
+  };
 
   return (
     <div className="bg-white bg-fixed text-black min-h-screen">
@@ -199,21 +234,56 @@ const LandingPage = () => {
           </div>
         </div>
 
-        <div className="h-10 md:h-40"></div>
-
+        {console.log(circularItems)}
         {galeri.length > 0 && (
           <div style={{ height: "30rem", position: "relative" }}>
             <CircularGallery
               items={galeri}
               bend={0}
-              textColor="#ffffff"
+              textColor="#000000ff"
               borderRadius={0.05}
               scrollEase={0.02}
+              medias={circularItems}
+              onImageClick={handleImageClick}
             />
           </div>
         )}
+        {showModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
+            <div className="bg-white rounded-lg w-11/12 max-w-3xl p-4 relative max-h-[90vh] overflow-y-auto">
+              <button
+                className="absolute top-2 right-2 text-gray-600 hover:text-black"
+                onClick={() => setShowModal(false)}
+              >
+                ❌
+              </button>
 
-        <div className="h-10 md:h-40"></div>
+              <h2 className="text-xl font-semibold mb-4">Galeri Pekerjaan</h2>
+
+              {galeriPekerjaan.length === 0 ? (
+                <p>Tidak ada gambar untuk pekerjaan ini.</p>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {galeriPekerjaan.map((img) => (
+                    <div key={img.id}>
+                      <img
+                        src={img.url_gambar}
+                        alt={img.keterangan || "Gambar"}
+                        className="w-full h-40 object-cover rounded"
+                      />
+                      {img.keterangan && (
+                        <p className="text-sm text-gray-700 mt-1">
+                          {img.keterangan}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+        
 
         <div className="grid gap-4 md:grid-cols-4 mt-16 border-t border-orange-400 pt-10 text-sm">
           <ul className="space-y-1 text-black">
