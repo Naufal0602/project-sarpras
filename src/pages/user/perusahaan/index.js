@@ -1,11 +1,18 @@
 import React, { useEffect, useState } from "react";
-import { collection, getDocs, deleteDoc, doc, query, orderBy  } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  deleteDoc,
+  doc,
+  query,
+  orderBy,
+} from "firebase/firestore";
 import { db } from "../../../services/firebase";
 import Navbar from "../../../components/Navbar";
 import Sidebar from "../../../components/SideBar";
 import { Link } from "react-router-dom";
 import DataTable from "react-data-table-component";
-import { PencilLine, Trash2 } from "lucide-react";
+import { PencilLine, Trash2, MapPin } from "lucide-react";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import jsPDF from "jspdf";
@@ -20,7 +27,13 @@ const AdminPerusahaanListPage = () => {
   const userData = JSON.parse(localStorage.getItem("user"));
   const isLevel2 = userData?.level === 2;
   const [exportScope, setExportScope] = useState("sebagian"); // default: sebagian
+  const [showModalPekerjaan, setShowModalPekerjaan] = useState(false);
+  const [selectedPerusahaan, setSelectedPerusahaan] = useState(null);
 
+  const handleShowPekerjaanModal = (perusahaan) => {
+    setSelectedPerusahaan(perusahaan);
+    setShowModalPekerjaan(true);
+  };
 
   const currentDate = new Date();
   const [selectedMonth, setSelectedMonth] = useState(
@@ -237,12 +250,12 @@ const AdminPerusahaanListPage = () => {
       name: "Dibuat",
       selector: (row) => formatDate(row.created_at),
       sortable: true,
-       sortFunction: (a, b) => {
-    // Ubah Timestamp Firebase ke milidetik
-      const dateA = a.created_at?.toDate?.().getTime?.() || 0;
-      const dateB = b.created_at?.toDate?.().getTime?.() || 0;
-      return dateB - dateA;
-       }
+      sortFunction: (a, b) => {
+        // Ubah Timestamp Firebase ke milidetik
+        const dateA = a.created_at?.toDate?.().getTime?.() || 0;
+        const dateB = b.created_at?.toDate?.().getTime?.() || 0;
+        return dateB - dateA;
+      },
     },
     {
       name: "Koordinat",
@@ -265,26 +278,37 @@ const AdminPerusahaanListPage = () => {
           {
             name: "Aksi",
             cell: (row) => (
-              <div className="flex flex-col sm:flex-row gap-2">
-                <Link
-                  to={`/user/perusahaan/edit/${row.id}`}
-                  className="group bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm flex items-center justify-center transition-all duration-300"
-                >
-                  <span className="group-hover:hidden">
-                    <PencilLine className="w-4 h-4" />
-                  </span>
-                  <span className="hidden group-hover:inline">Ubah</span>
-                </Link>
+              <div className="flex flex-row sm:flex-col gap-1 py-2">
+                <div className="flex gap-2">
+                  <Link
+                    to={`/user/perusahaan/edit/${row.id}`}
+                    className="group bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm flex items-center justify-center transition-all duration-300"
+                  >
+                    <span className="group-hover:hidden">
+                      <PencilLine className="w-4 h-4" />
+                    </span>
+                    <span className="hidden group-hover:inline">Ubah</span>
+                  </Link>
 
-                <button
-                  onClick={() => handleDeletePerusahaan(row.id)}
-                  className="group bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm flex items-center justify-center transition-all duration-300"
-                >
-                  <span className="group-hover:hidden">
-                    <Trash2 className="w-4 h-4" />
-                  </span>
-                  <span className="hidden group-hover:inline">Hapus</span>
-                </button>
+                  <button
+                    onClick={() => handleDeletePerusahaan(row.id)}
+                    className="group bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm flex items-center justify-center transition-all duration-300"
+                  >
+                    <span className="group-hover:hidden">
+                      <Trash2 className="w-4 h-4" />
+                    </span>
+                    <span className="hidden group-hover:inline">Hapus</span>
+                  </button>
+                </div>
+                <div className="w-full">
+                  <button
+                    onClick={() => handleShowPekerjaanModal(row)}
+                    className="group w-full bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 rounded text-sm flex items-center justify-center transition-all duration-300"
+                  >
+                    <span className="group-hover:hidden">📄</span>
+                    <span className="hidden group-hover:inline">Detail</span>
+                  </button>
+                </div>
               </div>
             ),
           },
@@ -370,6 +394,78 @@ const AdminPerusahaanListPage = () => {
           responsive
           noDataComponent="Belum ada data perusahaan"
         />
+
+        {showModalPekerjaan && selectedPerusahaan && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
+            <div className="bg-white rounded-lg shadow-lg w-full max-w-5xl relative">
+              <div className="flex gap-5">
+                {selectedPerusahaan.foto_kantor && (
+                  <div
+                    className="h-[400px] w-1/2 rounded border bg-center bg-cover bg-no-repeat"
+                    style={{
+                      backgroundImage: `url(${selectedPerusahaan.foto_kantor})`,
+                    }}
+                  />
+                )}
+
+                <div className="py-8 w-1/2 h-full mb-12 pr-8 flex items-start ">
+                  <button
+                    onClick={() => setShowModalPekerjaan(false)}
+                    className="absolute top-2 right-2 text-gray-600 hover:text-black text-xl font-bold"
+                  >
+                    &times;
+                  </button>
+
+                  <div className="space-y-2 text-sm">
+                    <h2 className="text-xl font-semibold mb-4">
+                      Detail Perusahaan
+                    </h2>
+                    <p>
+                      <strong>Nama Perusahaan:</strong>{" "}
+                      {selectedPerusahaan.nama_perusahaan}
+                    </p>
+                    <p>
+                      <strong>Direktur:</strong> {selectedPerusahaan.direktur}
+                    </p>
+                    <p>
+                      <strong>Alamat:</strong> {selectedPerusahaan.alamat}
+                    </p>
+                    <p>
+                      <strong>Status:</strong> {selectedPerusahaan.status}
+                    </p>
+                    <p>
+                      <strong>Dibuat:</strong>{" "}
+                      {new Date(
+                        selectedPerusahaan.created_at?.seconds * 1000
+                      ).toLocaleString()}
+                    </p>
+                    <p>
+                      <strong>Diperbarui:</strong>{" "}
+                      {new Date(
+                        selectedPerusahaan.updated_at?.seconds * 1000
+                      ).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+                <div className="absolute right-4 bottom-4">
+                  <a
+                    href={`https://www.google.com/maps?q=${selectedPerusahaan.latitude},${selectedPerusahaan.longitude}`}
+                    className="group w-40 h-8 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm flex items-center justify-center transition-all duration-300"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <span className="group-hover:hidden">
+                      <MapPin />
+                    </span>
+                    <span className="hidden group-hover:inline">
+                      Buka Di Gmaps
+                    </span>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {showExportModal && (
           <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
