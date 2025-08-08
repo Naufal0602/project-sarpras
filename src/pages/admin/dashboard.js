@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import AdminSidebar from "../../components/AdminSideBar";
-import AdminNavbar from "../../components/AdminNavBar";
+import AdminNavbar from "../../components/template/AdminNavBar";
 import { Users, Clock, CalendarDays, Timer, ShieldUser } from "lucide-react";
 
 const menuItems = [
@@ -83,7 +83,9 @@ const ADMINDashboard = () => {
             <Link to={item.path} key={index}>
               <div className="bg-white shadow-md rounded-xl p-6 hover:shadow-lg hover:scale-105 transition-transform duration-300">
                 <div className="mb-4">{item.icon}</div>
-                <h2 className="text-xl font-bold text-gray-700">{item.title}</h2>
+                <h2 className="text-xl font-bold text-gray-700">
+                  {item.title}
+                </h2>
                 <p className="text-sm text-gray-500">{item.description}</p>
               </div>
             </Link>

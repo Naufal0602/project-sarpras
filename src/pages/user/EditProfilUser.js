@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { db } from "../../services/firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
-import Navbar from "../../components/Navbar";
-import Sidebar from "../../components/SideBar";
+import Navbar from "../../components/template/Navbar";
+import Sidebar from "../../components/template/SideBar";
 
 const EditProfilePage = () => {
   const { id } = useParams();
@@ -80,7 +80,9 @@ const EditProfilePage = () => {
         <div className="flex-1 lg:ml-64">
           <div className="p-6 lg:p-10">
             <div className="bg-white rounded-lg shadow-lg p-8 max-w-xl mx-auto">
-              <h2 className="text-2xl font-semibold mb-6 text-gray-800">Edit Nama</h2>
+              <h2 className="text-2xl font-semibold mb-6 text-gray-800">
+                Edit Nama
+              </h2>
               <form onSubmit={handleSimpan} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">

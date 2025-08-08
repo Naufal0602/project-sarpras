@@ -4,10 +4,9 @@ import { useNavigate } from "react-router-dom";
 import { doc, getDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import LogoutButton from "../../components/LogoutButton";
-import Sidebar from "../../components/SideBar";
-import Navbar from "../../components/Navbar"; 
+import Sidebar from "../../components/template/SideBar";
+import Navbar from "../../components/template/Navbar";
 import Loading from "../../components/Loading";
-
 
 const UserDashboard = () => {
   const navigate = useNavigate();
@@ -81,9 +80,7 @@ const UserDashboard = () => {
   }, [authUser]);
   // Loading state
   if (loading) {
-    return (
-      <Loading/>
-    );
+    return <Loading />;
   }
 
   // Error state
@@ -145,7 +142,10 @@ const UserDashboard = () => {
               <div className="flex justify-center items-center mb-6">
                 <div>
                   <h1 className="text-3xl font-bold text-gray-800 mb-2">
-                    Selamat datang di SARPRAS, <span className="text-orange-500 text-3xl uppercase font-bold">{userData.nama || "Pengguna Tanpa Nama"}</span>
+                    Selamat datang di SARPRAS,{" "}
+                    <span className="text-orange-500 text-3xl uppercase font-bold">
+                      {userData.nama || "Pengguna Tanpa Nama"}
+                    </span>
                   </h1>
                 </div>
               </div>
@@ -154,13 +154,17 @@ const UserDashboard = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-gradient-to-r from-orange-400 to-orange-500 p-6 rounded-lg text-white">
                   <h3 className="text-lg font-semibold mb-2">Role</h3>
-                  <p className="text-2xl justify-center items-center text-center uppercase font-bold">{userData.role}</p>
+                  <p className="text-2xl justify-center items-center text-center uppercase font-bold">
+                    {userData.role}
+                  </p>
                 </div>
 
                 {/* Level Card */}
                 <div className="bg-gradient-to-r from-blue-400 to-blue-500 p-6 rounded-lg text-white">
                   <h3 className="text-lg font-semibold mb-2">Level</h3>
-                  <p className="text-3xl justify-center items-center text-center font-bold">{userData.level}</p>
+                  <p className="text-3xl justify-center items-center text-center font-bold">
+                    {userData.level}
+                  </p>
                 </div>
 
                 {/* Profile Page Card */}
@@ -179,7 +183,6 @@ const UserDashboard = () => {
             </div>
 
             {/* Data Management Section */}
-            
           </div>
         </div>
       </div>

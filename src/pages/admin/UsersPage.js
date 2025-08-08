@@ -11,7 +11,7 @@ import {
   deleteDoc,
 } from "firebase/firestore";
 import { Link } from "react-router-dom";
-import AdminNavbar from "../../components/AdminNavBar";
+import AdminNavbar from "../../components/template/AdminNavBar";
 import AdminSidebar from "../../components/AdminSideBar";
 import DataTable from "react-data-table-component";
 import jsPDF from "jspdf";

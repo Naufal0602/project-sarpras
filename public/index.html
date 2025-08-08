@@ -28,6 +28,56 @@
         },
       };
     </script>
+    <link
+      href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <style>
+      .swiper-wrapper {
+        width: 100%;
+        height: max-content !important;
+        padding-bottom: 64px !important;
+        -webkit-transition-timing-function: linear !important;
+        transition-timing-function: linear !important;
+        position: relative;
+      }
+      .swiper-pagination-bullet {
+        background: #ff0000;
+      }
+      .swiper-pagination-bullet-active {
+        background: #000000 !important;
+      }
+    </style>
+
+    <script>
+      console.log("halo");
+      var swiper = new Swiper(".centered-slide-carousel", {
+        centeredSlides: true,
+        paginationClickable: true,
+        loop: true,
+        spaceBetween: 30,
+        slideToClickedSlide: true,
+        pagination: {
+          el: ".centered-slide-carousel .swiper-pagination",
+          clickable: true,
+        },
+        breakpoints: {
+          1920: {
+            slidesPerView: 4,
+            spaceBetween: 30,
+          },
+          1028: {
+            slidesPerView: 2,
+            spaceBetween: 10,
+          },
+          990: {
+            slidesPerView: 6,
+            spaceBetween: 0,
+          },
+        },
+      });
+    </script>
 
     <title>React App</title>
 

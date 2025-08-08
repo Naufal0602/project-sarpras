@@ -3,14 +3,14 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { db } from "../../services/firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
-import AdminNavbar from '../../components/AdminNavBar';
-import AdminSidebar from '../../components/AdminSideBar';
+import AdminNavbar from "../../components/template/AdminNavBar";
+import AdminSidebar from "../../components/AdminSideBar";
 
 const EditUserPage = () => {
   const { id } = useParams(); // id = UID user
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [role, setRole] = useState('');
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState("");
   const [level, setLevel] = useState(1);
 
   useEffect(() => {
@@ -53,12 +53,16 @@ const EditUserPage = () => {
       {/* Konten Utama */}
       <div className="flex-1 md:ml-72 pt-16 px-4">
         <div className="max-w-md mx-auto mt-8 bg-white p-6 rounded-xl shadow-lg">
-          <h2 className="text-2xl font-bold text-gray-800 text-center mb-6">Edit Pengguna</h2>
+          <h2 className="text-2xl font-bold text-gray-800 text-center mb-6">
+            Edit Pengguna
+          </h2>
 
           <form onSubmit={handleUpdate} className="space-y-5">
             {/* Email */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Email
+              </label>
               <input
                 value={email}
                 disabled
@@ -68,7 +72,9 @@ const EditUserPage = () => {
 
             {/* Role */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Role
+              </label>
               <select
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
@@ -83,7 +89,9 @@ const EditUserPage = () => {
 
             {/* Level Akses */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Level Akses</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Level Akses
+              </label>
               <select
                 value={level}
                 onChange={(e) => setLevel(e.target.value)}
@@ -107,6 +115,5 @@ const EditUserPage = () => {
     </div>
   );
 };
-
 
 export default EditUserPage;

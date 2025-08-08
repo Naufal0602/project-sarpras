@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "../../../services/firebase";
-import Navbar from "../../../components/Navbar";
-import Sidebar from "../../../components/SideBar";
+import Navbar from "../../../components/template/Navbar";
+import Sidebar from "../../../components/template/SideBar";
 import Loading from "../../../components/Loading";
 
 const EditGambarPage = () => {
@@ -53,11 +53,9 @@ const EditGambarPage = () => {
     }
   };
 
-  if(loading){
-    return (<Loading text="Mengupdate..."/>);
-    }
-
-
+  if (loading) {
+    return <Loading text="Mengupdate..." />;
+  }
 
   return (
     <div className="flex min-h-screen">

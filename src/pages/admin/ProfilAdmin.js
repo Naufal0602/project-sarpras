@@ -5,7 +5,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import LogoutButton from "../../components/LogoutButton";
 import AdminSidebar from "../../components/AdminSideBar";
-import AdminNavbar from "../../components/AdminNavBar";
+import AdminNavbar from "../../components/template/AdminNavBar";
 
 const UserProfile = () => {
   const navigate = useNavigate();

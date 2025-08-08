@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { db } from "../services/firebase";
+import { db } from "../../services/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
 
 export default function ModalGaleri({ idPekerjaan, onClose }) {

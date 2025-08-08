@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../../../services/firebase";
 import { useNavigate } from "react-router-dom";
-import AdminNavbar from "../../../components/AdminNavBar";
-import Sidebar from "../../../components/SideBar";
+import AdminNavbar from "../../../components/template/AdminNavBar";
+import Sidebar from "../../../components/template/SideBar";
 import { uploadToCloudinary } from "../../../services/cloudinaryService";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import L from "leaflet";
@@ -100,7 +100,7 @@ const TambahPerusahaanPage = () => {
     <>
       {loading && (
         <div className="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50">
-          <Loading text="Mengupload"/>
+          <Loading text="Mengupload" />
         </div>
       )}
 

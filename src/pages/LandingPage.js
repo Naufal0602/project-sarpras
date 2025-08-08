@@ -2,16 +2,41 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../services/firebase";
-import CircularGallery from "../components/CircularGallery";
 const LandingPage = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedPekerjaanId, setSelectedPekerjaanId] = useState(null);
   const [galeriPekerjaan, setGaleriPekerjaan] = useState([]);
   const [galeri, setGaleri] = useState([]);
-  const [circularItems, setCircularItems] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (window.Swiper) {
+      new window.Swiper(".centered-slide-carousel", {
+        centeredSlides: true,
+        paginationClickable: true,
+        loop: true,
+        spaceBetween: 30,
+        slideToClickedSlide: true,
+        pagination: {
+          el: ".centered-slide-carousel .swiper-pagination",
+          clickable: true,
+        },
+        breakpoints: {
+          1920: {
+            slidesPerView: 4,
+            spaceBetween: 30,
+          },
+          1028: {
+            slidesPerView: 3,
+            spaceBetween: 10,
+          },
+          990: {
+            slidesPerView: 1,
+            spaceBetween: 0,
+          },
+        },
+      });
+    }
     const fetchGaleri = async () => {
       try {
         const q = query(
@@ -28,7 +53,6 @@ const LandingPage = () => {
         }));
 
         setGaleri(data); // Simpan full data
-        setCircularItems(data.map(({ image, text }) => ({ image, text }))); // Hanya image + text untuk CircularGallery
       } catch (err) {
         console.error("Gagal fetch galeri:", err);
       }
@@ -43,7 +67,7 @@ const LandingPage = () => {
 
     console.log("Gambar diklik, id_pekerjaan:", pekerjaanId);
     if (!pekerjaanId) return;
-    console.log(selectedPekerjaanId)
+    console.log(selectedPekerjaanId);
     setSelectedPekerjaanId(pekerjaanId);
     setShowModal(true);
 
@@ -63,6 +87,7 @@ const LandingPage = () => {
       console.error("Gagal fetch galeri pekerjaan:", err);
     }
   };
+  console.log(handleImageClick);
 
   return (
     <div className="bg-white bg-fixed text-black min-h-screen">
@@ -234,20 +259,26 @@ const LandingPage = () => {
           </div>
         </div>
 
-        {console.log(circularItems)}
-        {galeri.length > 0 && (
-          <div style={{ height: "30rem", position: "relative" }}>
-            <CircularGallery
-              items={galeri}
-              bend={0}
-              textColor="#000000ff"
-              borderRadius={0.05}
-              scrollEase={0.02}
-              medias={circularItems}
-              onImageClick={handleImageClick}
-            />
+        <div className="w-full relative">
+          <div className="swiper centered-slide-carousel swiper-container relative ">
+            <div className="swiper-wrapper">
+              {galeri.map((item) => (
+                <div className="swiper-slide" key={item.id}>
+                  <div
+                    className="rounded-2xl h-96 flex justify-center items-center bg-cover bg-center"
+                    style={{ backgroundImage: `url(${item.image})` }}
+                  >
+                    <span className="text-3xl font-semibold text-white bg-black/50 px-4 py-2 rounded">
+                      {item.text}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="swiper-pagination "></div>
           </div>
-        )}
+        </div>
+
         {showModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
             <div className="bg-white rounded-lg w-11/12 max-w-3xl p-4 relative max-h-[90vh] overflow-y-auto">
@@ -283,7 +314,6 @@ const LandingPage = () => {
             </div>
           </div>
         )}
-        
 
         <div className="grid gap-4 md:grid-cols-4 mt-16 border-t border-orange-400 pt-10 text-sm">
           <ul className="space-y-1 text-black">

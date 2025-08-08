@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../services/firebase";
-import ModalProsesUser from "../../components/ModalProsesUser";
-import AdminNavbar from "../../components/AdminNavBar";
+import ModalProsesUser from "../../components/modal/ModalProsesUser";
+import AdminNavbar from "../../components/template/AdminNavBar";
 import AdminSidebar from "../../components/AdminSideBar";
-
 
 const PendingUserListPage = () => {
   const [pendingUsers, setPendingUsers] = useState([]);
@@ -49,7 +48,9 @@ const PendingUserListPage = () => {
 
       {/* Konten utama */}
       <div className="flex-1 md:ml-72 pt-20 p-8 w-full">
-        <h2 className="text-2xl font-bold mb-6 text-orange-600">Daftar Pending Users</h2>
+        <h2 className="text-2xl font-bold mb-6 text-orange-600">
+          Daftar Pending Users
+        </h2>
 
         <div className="overflow-x-auto shadow-lg rounded-lg bg-white">
           <table className="min-w-full text-sm text-gray-700">

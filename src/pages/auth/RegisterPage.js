@@ -128,7 +128,7 @@ function RegisterPage() {
               {/* CAPTCHA */}
               <div className="flex justify-center">
                 <ReCAPTCHA
-                  sitekey="6LfCK5QrAAAAAEuZQkpaGUZoVp8veG5g3mf7amDF" // Ganti dengan key milikmu
+                  sitekey="6Lcxd54rAAAAABRmJUnWqYRTvuRK7nMcrWy2gGDt" // Ganti dengan key milikmu
                   onChange={() => setCaptchaVerified(true)}
                   onExpired={() => setCaptchaVerified(false)}
                 />

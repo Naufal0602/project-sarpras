@@ -8,16 +8,14 @@ import {
   ShieldUser,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-
-
 import {
   collection,
   query,
   where,
   onSnapshot,
 } from "firebase/firestore";
-import { db } from "../services/firebase"; // pastikan path ini sesuai
-import LogoutModal from './LogoutModal';
+import { db } from "../../services/firebase"; // pastikan path ini sesuai
+import LogoutModal from '../LogoutModal';
 
 
 const Sidebar = () => {

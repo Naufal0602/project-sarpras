@@ -2,9 +2,32 @@ import React, { useEffect, useState } from "react";
 import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../../../services/firebase";
 import { useNavigate, useParams } from "react-router-dom";
-import AdminNavbar from "../../../components/AdminNavBar";
-import Sidebar from "../../../components/SideBar";
+import AdminNavbar from "../../../components/template/AdminNavBar.js";
+import Sidebar from "../../../components/template/SideBar.js";
 import Loading from "../../../components/Loading.js";
+import { MapContainer, Marker, TileLayer, useMapEvents } from "react-leaflet";
+import { uploadToCloudinary } from "../../../services/cloudinaryService";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
+import axios from "axios";
+
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl:
+    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+});
+
+const LocationMarker = ({ setLatitude, setLongitude }) => {
+  useMapEvents({
+    click(e) {
+      setLatitude(e.latlng.lat);
+      setLongitude(e.latlng.lng);
+    },
+  });
+  return null;
+};
 
 const EditPerusahaanPage = () => {
   const [namaPerusahaan, setNamaPerusahaan] = useState("");
@@ -12,6 +35,11 @@ const EditPerusahaanPage = () => {
   const [alamat, setAlamat] = useState("");
   const [status, setStatus] = useState("aktif");
   const [loading, setLoading] = useState(false);
+
+  const [latitude, setLatitude] = useState(-6.2);
+  const [longitude, setLongitude] = useState(106.8);
+  const [fotoKantor, setFotoKantor] = useState(null); // untuk preview
+  const [fotoFile, setFotoFile] = useState(null); // untuk upload
 
   const navigate = useNavigate();
   const { id } = useParams();
@@ -28,6 +56,9 @@ const EditPerusahaanPage = () => {
           setDirektur(data.direktur);
           setAlamat(data.alamat);
           setStatus(data.status);
+          if (data.latitude) setLatitude(data.latitude);
+          if (data.longitude) setLongitude(data.longitude);
+          if (data.foto_kantor) setFotoKantor(data.foto_kantor.secure_url);
         } else {
           alert("Data tidak ditemukan.");
           navigate("/user/perusahaan");
@@ -35,10 +66,9 @@ const EditPerusahaanPage = () => {
       } catch (error) {
         console.error("Gagal mengambil data:", error);
         alert("Terjadi kesalahan. Silakan coba lagi.");
+      } finally {
+        setLoading(false); // pastikan ini juga ada
       }
-      finally {
-      setLoading(false); // pastikan ini juga ada
-    }
     };
 
     fetchData();
@@ -49,16 +79,39 @@ const EditPerusahaanPage = () => {
     setLoading(true);
 
     try {
+      let fotoKantorBaru = fotoKantor; // default pakai yang lama
+
+      if (fotoFile) {
+
+        try {
+          const docRef = doc(db, "perusahaan", id);
+          const docSnap = await getDoc(docRef);
+          const data = docSnap.data();
+          console.log("Menghapus foto lama:", data.foto_kantor.public_id);
+          await axios.post("http://localhost:3001/api/cloudinary/", {
+            public_id: data.foto_kantor.public_id,
+          });
+        } catch (e) {
+          console.error("Gagal hapus foto lama:", e);
+        }
+
+        const uploadRes = await uploadToCloudinary(fotoFile);
+        fotoKantorBaru = uploadRes;
+      }
+
       await updateDoc(doc(db, "perusahaan", id), {
         nama_perusahaan: namaPerusahaan,
         direktur,
         alamat,
         status,
+        latitude,
+        longitude,
+        foto_kantor: fotoKantorBaru,
         updated_at: serverTimestamp(),
       });
 
       alert("Data perusahaan berhasil diperbarui.");
-      navigate("/user/perusahaan");
+      navigate("/user/perusahaan"); // dimatikan dulu saat debugging
     } catch (error) {
       console.error("Gagal memperbarui perusahaan:", error);
       alert("Terjadi kesalahan. Silakan coba lagi.");
@@ -139,6 +192,59 @@ const EditPerusahaanPage = () => {
               </select>
             </div>
 
+            <div className="mb-4">
+              <label className="block font-medium text-gray-700 mb-1">
+                Foto Kantor
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    setFotoFile(file);
+                    setFotoKantor(URL.createObjectURL(file)); // update preview dengan foto baru
+                  }
+                }}
+                className="w-full border px-4 py-2 rounded"
+              />
+
+              {fotoKantor && (
+                <div className="mt-2">
+                  <p className="text-sm text-gray-500">Preview Foto Kantor:</p>
+                  <img
+                    src={fotoKantor}
+                    alt="Preview"
+                    className="w-48 h-32 object-cover rounded border"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Map */}
+            <div className="mb-4">
+              <label className="block font-medium text-gray-700 mb-1">
+                Lokasi Kantor (Klik pada peta)
+              </label>
+              <div className="h-64 w-full mb-2">
+                <MapContainer
+                  center={[latitude, longitude]}
+                  zoom={13}
+                  style={{ height: "100%", width: "100%" }}
+                >
+                  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                  <LocationMarker
+                    setLatitude={setLatitude}
+                    setLongitude={setLongitude}
+                  />
+                  <Marker position={[latitude, longitude]} />
+                </MapContainer>
+              </div>
+              <p className="text-sm text-gray-600">
+                Lat: {latitude.toFixed(5)}, Lng: {longitude.toFixed(5)}
+              </p>
+            </div>
+
             <div className="flex gap-4">
               <button
                 type="submit"
@@ -156,7 +262,8 @@ const EditPerusahaanPage = () => {
               </button>
             </div>
           </form>
-        )};
+        )}
+        ;
       </div>
     </div>
   );

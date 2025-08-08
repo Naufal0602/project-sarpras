@@ -11,8 +11,8 @@ import {
 } from "firebase/firestore";
 import { db } from "../../../services/firebase";
 import { useParams, useNavigate } from "react-router-dom";
-import Navbar from "../../../components/Navbar";
-import Sidebar from "../../../components/SideBar";
+import Navbar from "../../../components/template/Navbar";
+import Sidebar from "../../../components/template/SideBar";
 import Loading from "../../../components/Loading";
 
 const EditPekerjaanFisikPage = () => {
@@ -98,9 +98,9 @@ const EditPekerjaanFisikPage = () => {
     }
   };
 
-  if(loading){
-    return (<Loading text="Mengupdate..."/>);
-    }
+  if (loading) {
+    return <Loading text="Mengupdate..." />;
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-50">

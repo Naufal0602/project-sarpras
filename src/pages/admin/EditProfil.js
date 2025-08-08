@@ -3,7 +3,7 @@ import { auth, db } from "../../services/firebase";
 import { useNavigate } from "react-router-dom";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import AdminSidebar from "../../components/AdminSideBar";
-import AdminNavbar from "../../components/AdminNavBar";
+import AdminNavbar from "../../components/template/AdminNavBar";
 
 const EditUserProfile = () => {
   const [nama, setNama] = useState("");

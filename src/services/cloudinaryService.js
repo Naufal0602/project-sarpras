@@ -2,7 +2,8 @@
 export const uploadToCloudinary = async (file) => {
   const formData = new FormData();
   formData.append("file", file);
-  formData.append("upload_preset", "sarpras_upload"); // ganti sesuai preset kamu
+  formData.append("upload_preset", "sarpras_upload");
+  
 
   const res = await fetch("https://api.cloudinary.com/v1_1/dppfdwttz/image/upload", {
     method: "POST",

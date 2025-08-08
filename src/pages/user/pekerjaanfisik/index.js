@@ -12,8 +12,8 @@ import {
   orderBy,
 } from "firebase/firestore";
 import { db } from "../../../services/firebase";
-import Navbar from "../../../components/Navbar";
-import Sidebar from "../../../components/SideBar";
+import Navbar from "../../../components/template/Navbar";
+import Sidebar from "../../../components/template/SideBar";
 import { Link } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import {
@@ -31,7 +31,6 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Loading from "../../../components/Loading";
 
-
 const AdminPekerjaanFisikListPage = () => {
   const [pekerjaanList, setPekerjaanList] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -48,17 +47,17 @@ const AdminPekerjaanFisikListPage = () => {
   const [zoomImageUrl, setZoomImageUrl] = useState(null);
   const navigate = useNavigate();
   const [activeImageId, setActiveImageId] = useState(null);
-  
+
   const bagianUser = role?.includes("user-")
     ? role.replace("user-", "")
     : "semua"; // admin lihat semua
-    
-    const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
-    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
   const getFilteredExportData = () => {
     let data = [...filteredData];
-    
+
     if (rangeType === "date") {
       const start = new Date(selectedYear, selectedMonth - 1, 1);
       const end = new Date(selectedYear, selectedMonth, 0, 23, 59, 59, 999); // akhir bulan
@@ -68,10 +67,10 @@ const AdminPekerjaanFisikListPage = () => {
         return createdAt && createdAt >= start && createdAt <= end;
       });
     }
-    
+
     return data;
   };
-  
+
   const handleZoom = (url) => {
     setZoomImageUrl(url);
   };
@@ -85,14 +84,14 @@ const AdminPekerjaanFisikListPage = () => {
       // Ambil data pekerjaan berdasarkan ID
       const pekerjaan = pekerjaanList.find((item) => item.id === id);
       setSelectedData(pekerjaan); // untuk detail di modal
-      
+
       // Ambil data galeri dari Firestore
       const q = query(
         collection(db, "galeri"),
         where("id_pekerjaan", "==", id)
       );
       const snapshot = await getDocs(q);
-      
+
       // Tambahkan doc.id ke setiap data
       const gambarData = snapshot.docs.map((doc) => ({
         id: doc.id, // ← penting: tambahkan ID dokumen Firestore
@@ -115,7 +114,7 @@ const AdminPekerjaanFisikListPage = () => {
   const getFormattedNow = () => {
     const now = new Date();
     const pad = (num) => String(num).padStart(2, "0");
-    
+
     return (
       pad(now.getDate()) +
       pad(now.getMonth() + 1) +
@@ -124,18 +123,18 @@ const AdminPekerjaanFisikListPage = () => {
       pad(now.getMinutes())
     );
   };
-  
+
   const exportToPDF = () => {
     const exportData = getFilteredExportData();
     const doc = new jsPDF();
-    
+
     const now = new Date();
     const formattedDate = now.toLocaleDateString("id-ID", {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
     });
-    
+
     // Judul dan tanggal cetak
     // Judul di tengah
     doc.setFontSize(16);
@@ -145,7 +144,7 @@ const AdminPekerjaanFisikListPage = () => {
     const textWidth = doc.getTextWidth(title);
     const x = (pageWidth - textWidth) / 2;
     doc.text(title, x, 15);
-    
+
     doc.setFontSize(10);
     doc.setTextColor(0, 0, 0);
     doc.text(`Tanggal Dicetak: ${formattedDate}`, 14, 22);
@@ -158,7 +157,7 @@ const AdminPekerjaanFisikListPage = () => {
       "Bagian",
       "Dibuat",
     ];
-    
+
     const tableRows = exportData.map((row) => [
       row.perusahaan_nama || "-",
       row.jenis_pekerjaan || "-",
@@ -167,7 +166,7 @@ const AdminPekerjaanFisikListPage = () => {
       row.bagian || "-",
       formatDate(row.created_at),
     ]);
-    
+
     autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
@@ -210,7 +209,7 @@ const AdminPekerjaanFisikListPage = () => {
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Pekerjaan Fisik");
-    
+
     const excelBuffer = XLSX.write(workbook, {
       bookType: "xlsx",
       type: "array",
@@ -219,67 +218,71 @@ const AdminPekerjaanFisikListPage = () => {
     saveAs(blob, `DataPekerjaanFisik_${getFormattedNow()}.xlsx`);
     setShowExportModal(false);
   };
-  
-const fetchPekerjaan = async () => {
-  try {
-    const q = query(
-      collection(db, "pekerjaan_fisik"),
-      orderBy("created_at", "desc") // urutkan berdasarkan waktu dibuat (terbaru di atas)
-    );
-    const snapshot = await getDocs(q);
 
-    const data = await Promise.all(
-      snapshot.docs.map(async (docSnap) => {
-        const pekerjaan = docSnap.data();
-        let perusahaanNama = "-";
-        let gambarThumbnail = null;
+  const fetchPekerjaan = async () => {
+    try {
+      const q = query(
+        collection(db, "pekerjaan_fisik"),
+        orderBy("created_at", "desc") // urutkan berdasarkan waktu dibuat (terbaru di atas)
+      );
+      const snapshot = await getDocs(q);
 
-        // Ambil nama perusahaan
-        try {
-          const perusahaanRef = doc(db, "perusahaan", pekerjaan.perusahaan_id);
-          const perusahaanDoc = await getDoc(perusahaanRef);
-          if (perusahaanDoc.exists()) {
-            perusahaanNama = perusahaanDoc.data().nama_perusahaan;
+      const data = await Promise.all(
+        snapshot.docs.map(async (docSnap) => {
+          const pekerjaan = docSnap.data();
+          let perusahaanNama = "-";
+          let gambarThumbnail = null;
+
+          // Ambil nama perusahaan
+          try {
+            const perusahaanRef = doc(
+              db,
+              "perusahaan",
+              pekerjaan.perusahaan_id
+            );
+            const perusahaanDoc = await getDoc(perusahaanRef);
+            if (perusahaanDoc.exists()) {
+              perusahaanNama = perusahaanDoc.data().nama_perusahaan;
+            }
+          } catch (e) {
+            console.error("Gagal mengambil nama perusahaan:", e);
           }
-        } catch (e) {
-          console.error("Gagal mengambil nama perusahaan:", e);
-        }
 
-        // Ambil gambar thumbnail dari koleksi galeri
-        try {
-          const galeriRef = collection(db, "galeri");
-          const galeriQuery = query(
-            galeriRef,
-            where("id_pekerjaan", "==", docSnap.id),
-            where("thumbnail", "==", true),
-            limit(1)
-          );
-          const galeriSnapshot = await getDocs(galeriQuery);
-          if (!galeriSnapshot.empty) {
-            const galeriDocData = galeriSnapshot.docs[0].data();
-            gambarThumbnail = galeriDocData.url_gambar;
+          // Ambil gambar thumbnail dari koleksi galeri
+          try {
+            const galeriRef = collection(db, "galeri");
+            const galeriQuery = query(
+              galeriRef,
+              where("id_pekerjaan", "==", docSnap.id),
+              where("thumbnail", "==", true),
+              limit(1)
+            );
+            const galeriSnapshot = await getDocs(galeriQuery);
+            if (!galeriSnapshot.empty) {
+              const galeriDocData = galeriSnapshot.docs[0].data();
+              gambarThumbnail = galeriDocData.url_gambar;
+            }
+          } catch (e) {
+            console.error("Gagal mengambil gambar galeri:", e);
           }
-        } catch (e) {
-          console.error("Gagal mengambil gambar galeri:", e);
-        }
 
-        console.log("Pekerjaan:", docSnap.id, "gambar:", gambarThumbnail);
-        return {
-          id: docSnap.id,
-          ...pekerjaan,
-          perusahaan_nama: perusahaanNama,
-          gambar: gambarThumbnail,
-        };
-      })
-    );
+          console.log("Pekerjaan:", docSnap.id, "gambar:", gambarThumbnail);
+          return {
+            id: docSnap.id,
+            ...pekerjaan,
+            perusahaan_nama: perusahaanNama,
+            gambar: gambarThumbnail,
+          };
+        })
+      );
 
-    setPekerjaanList(data);
-  } catch (err) {
-    console.error("Gagal mengambil data pekerjaan fisik:", err);
-  } finally {
-    setLoading(false);
-  }
-};
+      setPekerjaanList(data);
+    } catch (err) {
+      console.error("Gagal mengambil data pekerjaan fisik:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchPekerjaan();
@@ -325,7 +328,18 @@ const fetchPekerjaan = async () => {
     const confirm = window.confirm("Yakin ingin menghapus pekerjaan ini?");
     if (!confirm) return;
     try {
-      await deleteDoc(doc(db, "pekerjaan_fisik", id));
+      const galeriRef = collection(db, "galeri");
+      const q = query(galeriRef, where("id_pekerjaan", "==", id));
+      const querySnapshot = await getDocs(q);
+
+      const publicIds = querySnapshot.docs.map(doc => doc.data().public_id);
+
+      console.log("Public ID galeri terkait pekerjaan:", publicIds);
+      await axios.post("http://localhost:3001/api/cloudinary/", {
+        public_id: publicIds,
+      });
+
+      await deleteDoc(doc(db, "pekerjaan", id));
       setPekerjaanList((prev) => prev.filter((item) => item.id !== id));
       alert("Pekerjaan berhasil dihapus.");
     } catch (error) {
@@ -348,7 +362,6 @@ const fetchPekerjaan = async () => {
     if (!konfirmasi) return;
 
     try {
-      // 1. Hapus dari Firestore berdasarkan URL
       const q = query(
         collection(db, "galeri"),
         where("url_gambar", "==", item.url_gambar)
@@ -461,7 +474,7 @@ const fetchPekerjaan = async () => {
                 <div>
                   <button
                     onClick={() => openGaleriModal(row.id, row.jenis_pekerjaan)}
-                    className="group bg-blue-600 hover:bg-blue-700 w-full text-white px-3 py-1 rounded text-sm flex items-center justify-center transition-all duration-300"
+                    className="group bg-green-500 hover:bg-green-700 w-full text-white px-3 py-1 rounded text-sm flex items-center justify-center transition-all duration-300"
                   >
                     <span className="group-hover:hidden">
                       <GalleryHorizontal className="w-4 h-4" />
@@ -533,7 +546,7 @@ const fetchPekerjaan = async () => {
           columns={columns}
           data={filteredData}
           progressPending={loading}
-            progressComponent={<Loading />}
+          progressComponent={<Loading />}
           pagination
           highlightOnHover
           responsive
@@ -625,7 +638,7 @@ const fetchPekerjaan = async () => {
                               handleZoom(item.url_gambar);
                             }}
                             className="bg-white p-2 rounded shadow hover:bg-gray-100"
-                            title="Lihat Besar"
+                            title="Perbesar Gambar"
                           >
                             <Fullscreen />
                           </button>

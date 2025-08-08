@@ -4,8 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { doc, getDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import LogoutButton from "../../components/LogoutButton";
-import Sidebar from "../../components/SideBar";
-import Navbar from "../../components/Navbar";
+import Sidebar from "../../components/template/SideBar";
+import Navbar from "../../components/template/Navbar";
 import { Link } from "react-router-dom";
 import Loading from "../../components/Loading";
 
@@ -51,9 +51,7 @@ const UserProfile = () => {
   }, [authUser]);
 
   if (loading) {
-    return (
-      <Loading/>
-    );
+    return <Loading />;
   }
 
   if (error) {
@@ -115,9 +113,10 @@ const UserProfile = () => {
                 </button>
                 <Link
                   to={`/user/edit-profile/${authUser.uid}`}
-                  className="ml-4 bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors font-medium">
+                  className="ml-4 bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors font-medium"
+                >
                   Edit Profil
-                  </Link>
+                </Link>
               </div>
             </div>
           </div>

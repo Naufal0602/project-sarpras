@@ -2,9 +2,16 @@ import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { uploadToCloudinary } from "../../../services/cloudinaryService";
 import { db } from "../../../services/firebase";
-import { collection, addDoc, serverTimestamp, getDocs, query, where  } from "firebase/firestore";
-import Navbar from "../../../components/Navbar";
-import Sidebar from "../../../components/SideBar";
+import {
+  collection,
+  addDoc,
+  serverTimestamp,
+  getDocs,
+  query,
+  where,
+} from "firebase/firestore";
+import Navbar from "../../../components/template/Navbar";
+import Sidebar from "../../../components/template/SideBar";
 import Loading from "../../../components/Loading";
 
 export default function UploadForm() {
@@ -62,10 +69,9 @@ export default function UploadForm() {
     }
   };
 
-    if(loading){
-    return (<Loading text="Mengupdate..."/>);
-    }
-
+  if (loading) {
+    return <Loading text="Mengupdate..." />;
+  }
 
   return (
     <div className="flex min-h-screen">

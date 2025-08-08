@@ -3,13 +3,14 @@ import {
   collection,
   getDocs,
   deleteDoc,
+  getDoc,
   doc,
   query,
   orderBy,
 } from "firebase/firestore";
 import { db } from "../../../services/firebase";
-import Navbar from "../../../components/Navbar";
-import Sidebar from "../../../components/SideBar";
+import Navbar from "../../../components/template/Navbar.js";
+import Sidebar from "../../../components/template/SideBar.js";
 import { Link } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import { PencilLine, Trash2, MapPin } from "lucide-react";
@@ -18,6 +19,7 @@ import { saveAs } from "file-saver";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import Loading from "../../../components/Loading.js";
+import axios from "axios";
 
 const AdminPerusahaanListPage = () => {
   const [perusahaanList, setPerusahaanList] = useState([]);
@@ -74,6 +76,16 @@ const AdminPerusahaanListPage = () => {
     if (!confirmDelete) return;
 
     try {
+      try {
+        const docRef = doc(db, "perusahaan", perusahaanId);
+        const docSnap = await getDoc(docRef);
+        const data = docSnap.data();
+        await axios.post("http://localhost:3001/api/cloudinary/", {
+          public_id: data.foto_kantor.public_id,
+        });
+      } catch (e) {
+        console.error("Gagal hapus foto lama:", e);
+      }
       await deleteDoc(doc(db, "perusahaan", perusahaanId));
       setPerusahaanList((prev) =>
         prev.filter((perusahaan) => perusahaan.id !== perusahaanId)
@@ -303,7 +315,7 @@ const AdminPerusahaanListPage = () => {
                 <div className="w-full">
                   <button
                     onClick={() => handleShowPekerjaanModal(row)}
-                    className="group w-full bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 rounded text-sm flex items-center justify-center transition-all duration-300"
+                    className="group w-full bg-green-400 hover:bg-green-700 text-white px-3 py-1 rounded text-sm flex items-center justify-center transition-all duration-300"
                   >
                     <span className="group-hover:hidden">📄</span>
                     <span className="hidden group-hover:inline">Detail</span>
@@ -399,11 +411,11 @@ const AdminPerusahaanListPage = () => {
           <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
             <div className="bg-white rounded-lg shadow-lg w-full max-w-5xl relative">
               <div className="flex gap-5">
-                {selectedPerusahaan.foto_kantor && (
+                {selectedPerusahaan.foto_kantor.secure_url && (
                   <div
                     className="h-[400px] w-1/2 rounded border bg-center bg-cover bg-no-repeat"
                     style={{
-                      backgroundImage: `url(${selectedPerusahaan.foto_kantor})`,
+                      backgroundImage: `url(${selectedPerusahaan.foto_kantor.secure_url})`,
                     }}
                   />
                 )}

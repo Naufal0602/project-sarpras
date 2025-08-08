@@ -1,23 +1,10 @@
 import React, { useState, useEffect } from "react";
-import {
-  Users,
-  Menu,
-  X,
-  Building,
-  BicepsFlexed ,
-  House
-} from "lucide-react";
+import { Users, Menu, X, Building, BicepsFlexed, House } from "lucide-react";
 import { Link } from "react-router-dom";
 
-import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-} from "firebase/firestore";
-import { db } from "../services/firebase"; // pastikan path ini sesuai
-import LogoutModal from './LogoutModal';
-
+import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { db } from "../../services/firebase"; // pastikan path ini sesuai
+import LogoutModal from "../LogoutModal";
 
 const Sidebar = () => {
   const [activeItem, setActiveItem] = useState("Campaign Funds");
@@ -56,7 +43,7 @@ const Sidebar = () => {
     },
     {
       name: "Pekerjaan Fisik",
-      icon: BicepsFlexed ,
+      icon: BicepsFlexed,
       to: "/user/pekerjaan-fisik",
     },
   ];
@@ -96,8 +83,8 @@ const Sidebar = () => {
         <div className="p-6">
           <div className="flex flex-col items-center text-center space-x-2">
             <div className="p-4 w-40 h-40 bg-white rounded flex rounded-full items-center justify-center">
-               <img className="w-full" src="/logo_sarpras1.png" alt=""></img> 
-               <span className="hidden">{pendingCount} pending</span>
+              <img className="w-full" src="/logo_sarpras1.png" alt=""></img>
+              <span className="hidden">{pendingCount} pending</span>
             </div>
             <div className="text-white">
               <h1 className="font-bold text-lg">SARPRAS</h1>
