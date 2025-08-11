@@ -84,7 +84,7 @@ const AdminPerusahaanListPage = () => {
           public_id: data.foto_kantor.public_id,
         });
       } catch (e) {
-        console.error("Gagal hapus foto lama:", e);
+        console.error("Gagal:", e);
       }
       await deleteDoc(doc(db, "perusahaan", perusahaanId));
       setPerusahaanList((prev) =>

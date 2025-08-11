@@ -2,6 +2,10 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../services/firebase";
+import Slider from "react-slick";
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
+
 const LandingPage = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedPekerjaanId, setSelectedPekerjaanId] = useState(null);
@@ -10,56 +14,90 @@ const LandingPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (window.Swiper) {
-      new window.Swiper(".centered-slide-carousel", {
-        centeredSlides: true,
-        paginationClickable: true,
-        loop: true,
-        spaceBetween: 30,
-        slideToClickedSlide: true,
-        pagination: {
-          el: ".centered-slide-carousel .swiper-pagination",
-          clickable: true,
-        },
-        breakpoints: {
-          1920: {
-            slidesPerView: 4,
-            spaceBetween: 30,
-          },
-          1028: {
-            slidesPerView: 3,
-            spaceBetween: 10,
-          },
-          990: {
-            slidesPerView: 1,
-            spaceBetween: 0,
-          },
-        },
-      });
-    }
-    const fetchGaleri = async () => {
+    const fetchGaleriWithDetails = async () => {
       try {
-        const q = query(
+        // 1. Ambil data galeri (thumbnail)
+        const qGaleri = query(
           collection(db, "galeri"),
-          where("thumbnail", "==", true) // hanya ambil yang thumbnail === true
+          where("thumbnail", "==", true)
         );
-        const snapshot = await getDocs(q);
+        const snapshotGaleri = await getDocs(qGaleri);
 
-        const data = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          image: doc.data().url_gambar,
-          text: doc.data().keterangan,
-          id_pekerjaan: doc.data().id_pekerjaan,
-        }));
+        const galeriData = [];
 
-        setGaleri(data); // Simpan full data
+        for (const docGaleri of snapshotGaleri.docs) {
+          const galeriItem = {
+            id: docGaleri.id,
+            image: docGaleri.data().url_gambar,
+            text: docGaleri.data().keterangan,
+            id_pekerjaan: docGaleri.data().id_pekerjaan,
+          };
+
+          // 2. Ambil data pekerjaan_fisik
+          const pekerjaanRef = collection(db, "pekerjaan_fisik");
+          const qPekerjaan = query(
+            pekerjaanRef,
+            where("__name__", "==", galeriItem.id_pekerjaan)
+          );
+          const snapshotPekerjaan = await getDocs(qPekerjaan);
+          const pekerjaanData = snapshotPekerjaan.docs[0]?.data();
+
+          if (pekerjaanData) {
+            galeriItem.pekerjaan = {
+              jenis_pekerjaan: pekerjaanData.jenis_pekerjaan,
+              sekolah: pekerjaanData.sekolah,
+              id_perusahaan: pekerjaanData.id_perusahaan,
+            };
+
+            // 3. Ambil data perusahaan
+            const perusahaanRef = collection(db, "perusahaan");
+            const qPerusahaan = query(
+              perusahaanRef,
+              where("__name__", "==", pekerjaanData.perusahaan_id)
+            );
+            const snapshotPerusahaan = await getDocs(qPerusahaan);
+            const perusahaanData = snapshotPerusahaan.docs[0]?.data();
+
+            if (perusahaanData) {
+              galeriItem.perusahaan = {
+                nama: perusahaanData.nama_perusahaan, // sesuaikan nama field
+              };
+            }
+          }
+
+          galeriData.push(galeriItem);
+        }
+
+        setGaleri(galeriData);
       } catch (err) {
-        console.error("Gagal fetch galeri:", err);
+        console.error("Gagal fetch galeri dengan detail:", err);
       }
     };
 
-    fetchGaleri();
+    fetchGaleriWithDetails();
   }, []);
+
+  const settings = {
+    conterMode: true,
+    centerPadding: "60px",
+    dots: true,
+    infinite: true,
+    speed: 800,
+    slidesToShow: 3,
+    slidesToScroll: 1,
+    autoplay: true,
+    autoplaySpeed: 3000,
+    responsive: [
+      {
+        breakpoint: 1028,
+        settings: { slidesToShow: 3 },
+      },
+      {
+        breakpoint: 990,
+        settings: { slidesToShow: 1 },
+      },
+    ],
+  };
 
   const handleImageClick = async (media) => {
     const matched = galeri.find((item) => item.image === media.image);
@@ -67,21 +105,23 @@ const LandingPage = () => {
 
     console.log("Gambar diklik, id_pekerjaan:", pekerjaanId);
     if (!pekerjaanId) return;
-    console.log(selectedPekerjaanId);
     setSelectedPekerjaanId(pekerjaanId);
+    console.log("pekerjaanId",selectedPekerjaanId);
     setShowModal(true);
 
     try {
       const q = query(
         collection(db, "galeri"),
-        where("id_pekerjaan", "==", pekerjaanId)
+        where("id_pekerjaan", "==", selectedPekerjaanId)
       );
+
       const snapshot = await getDocs(q);
       const data = snapshot.docs.map((doc) => ({
         id: doc.id,
         url_gambar: doc.data().url_gambar,
         keterangan: doc.data().keterangan,
       }));
+      console.log("data", data);
       setGaleriPekerjaan(data);
     } catch (err) {
       console.error("Gagal fetch galeri pekerjaan:", err);
@@ -259,61 +299,94 @@ const LandingPage = () => {
           </div>
         </div>
 
-        <div className="w-full relative">
-          <div className="swiper centered-slide-carousel swiper-container relative ">
-            <div className="swiper-wrapper">
-              {galeri.map((item) => (
-                <div className="swiper-slide" key={item.id}>
-                  <div
-                    className="rounded-2xl h-96 flex justify-center items-center bg-cover bg-center"
-                    style={{ backgroundImage: `url(${item.image})` }}
-                  >
-                    <span className="text-3xl font-semibold text-white bg-black/50 px-4 py-2 rounded">
-                      {item.text}
-                    </span>
+        <div className="w-full relative py-12">
+          <div>
+            <h2 className="text-4xl font-bold text-orange-400">
+              Galeri Pekerjaan
+            </h2>
+            <Slider {...settings}>
+              {galeri.map((media) => (
+                <div
+                  key={media.id}
+                  onClick={() => handleImageClick(media)}
+                  className="flex justify-center items-center"
+                  title={`Pekerjaan ${
+                    media.pekerjaan?.jenis_pekerjaan || ""
+                  }, yang dilakukan di sekolah ${
+                    media.pekerjaan?.sekolah || ""
+                  } oleh ${media.perusahaan?.nama || ""}`}
+                >
+                  <div className="h-72 flex justify-center items-center flex-col">
+                    <img
+                      src={media.image}
+                      alt={media.text}
+                      style={{
+                        maxHeight: "300px",
+                        width: "auto",
+                        cursor: "pointer",
+                        borderRadius: "8px",
+                      }}
+                    />
+                    <p style={{ textAlign: "center", marginTop: "8px" }}>
+                      {media.text}
+                    </p>
                   </div>
                 </div>
               ))}
-            </div>
-            <div className="swiper-pagination "></div>
+            </Slider>
           </div>
-        </div>
 
-        {showModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
-            <div className="bg-white rounded-lg w-11/12 max-w-3xl p-4 relative max-h-[90vh] overflow-y-auto">
-              <button
-                className="absolute top-2 right-2 text-gray-600 hover:text-black"
-                onClick={() => setShowModal(false)}
-              >
-                ❌
-              </button>
-
-              <h2 className="text-xl font-semibold mb-4">Galeri Pekerjaan</h2>
-
-              {galeriPekerjaan.length === 0 ? (
-                <p>Tidak ada gambar untuk pekerjaan ini.</p>
-              ) : (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {galeriPekerjaan.map((img) => (
-                    <div key={img.id}>
-                      <img
-                        src={img.url_gambar}
-                        alt={img.keterangan || "Gambar"}
-                        className="w-full h-40 object-cover rounded"
-                      />
-                      {img.keterangan && (
-                        <p className="text-sm text-gray-700 mt-1">
-                          {img.keterangan}
-                        </p>
-                      )}
-                    </div>
-                  ))}
+          {/* Modal untuk galeri pekerjaan */}
+          {showModal && (
+            <div className="fixed inset-0 z-50 bg-black bg-opacity-60 flex items-center justify-center px-4">
+              <div className="bg-white rounded-lg shadow-lg max-w-3xl w-full p-6 overflow-hidden max-h-[70vh] relative">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-3xl font-extrabold">Galeri Pekerjaan</h2>
+                  <button
+                    onClick={() => setShowModal(false)}
+                    className="text-gray-500 hover:text-red-500 text-xl font-bold"
+                  >
+                    ×
+                  </button>
                 </div>
-              )}
+
+                <div className="flex flex-col mt-8 md:flex-row gap-4 h-96">
+                  {/* Kolom Kanan: Galeri */}
+                  <div className="w-full relative overflow-scroll">
+                    {galeriPekerjaan.length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 overflow-y-auto max-h-full pr-2 pb-14">
+                        {galeriPekerjaan.map((item, index) => (
+                          <div
+                            key={index}
+                            className="border rounded overflow-hidden relative group cursor-pointer"
+                          >
+                            {/* Gambar */}
+                            <img
+                              src={item.url_gambar}
+                              alt={`Gambar ${index}`}
+                              className="w-full h-32 object-cover"
+                            />
+
+                            {/* Keterangan */}
+                            <p className="text-xs text-center p-1">
+                              {item.keterangan || "-"}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 text-sm italic">
+                        Tidak ada gambar untuk pekerjaan ini.
+                      </p>
+                    )}
+
+           
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         <div className="grid gap-4 md:grid-cols-4 mt-16 border-t border-orange-400 pt-10 text-sm">
           <ul className="space-y-1 text-black">

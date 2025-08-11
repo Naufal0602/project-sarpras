@@ -4,7 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { db } from "../../services/firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import AdminNavbar from "../../components/template/AdminNavBar";
-import AdminSidebar from "../../components/AdminSideBar";
+import AdminSidebar from "../../components/template/AdminSideBar";
 
 const EditUserPage = () => {
   const { id } = useParams(); // id = UID user

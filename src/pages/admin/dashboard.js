@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import AdminSidebar from "../../components/AdminSideBar";
+import AdminSidebar from "../../components/template/AdminSideBar";
 import AdminNavbar from "../../components/template/AdminNavBar";
 import { Users, Clock, CalendarDays, Timer, ShieldUser } from "lucide-react";
 

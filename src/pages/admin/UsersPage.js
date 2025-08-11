@@ -12,7 +12,7 @@ import {
 } from "firebase/firestore";
 import { Link } from "react-router-dom";
 import AdminNavbar from "../../components/template/AdminNavBar";
-import AdminSidebar from "../../components/AdminSideBar";
+import AdminSidebar from "../../components/template/AdminSideBar";
 import DataTable from "react-data-table-component";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";

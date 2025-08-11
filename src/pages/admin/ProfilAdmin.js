@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { doc, getDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import LogoutButton from "../../components/LogoutButton";
-import AdminSidebar from "../../components/AdminSideBar";
+import AdminSidebar from "../../components/template/AdminSideBar";
 import AdminNavbar from "../../components/template/AdminNavBar";
 
 const UserProfile = () => {

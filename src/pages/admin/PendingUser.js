@@ -3,7 +3,7 @@ import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../services/firebase";
 import ModalProsesUser from "../../components/modal/ModalProsesUser";
 import AdminNavbar from "../../components/template/AdminNavBar";
-import AdminSidebar from "../../components/AdminSideBar";
+import AdminSidebar from "../../components/template/AdminSideBar";
 
 const PendingUserListPage = () => {
   const [pendingUsers, setPendingUsers] = useState([]);

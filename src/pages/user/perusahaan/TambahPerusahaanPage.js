@@ -29,15 +29,18 @@ const TambahPerusahaanPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-
+  
     try {
-      let fotoKantorUrl = "";
-      // Upload ke Cloudinary jika ada file gambar
-      if (fotoKantorFile) {
-        const result = await uploadToCloudinary(fotoKantorFile);
-        fotoKantorUrl = result.secure_url;
+      // Upload foto ke Cloudinary
+      const result = await uploadToCloudinary(fotoKantorFile);
+      console.log(result);
+  
+      // Pastikan data Cloudinary punya public_id dan secure_url
+      if (!result?.public_id || !result?.secure_url) {
+        throw new Error("Gagal mengupload foto ke Cloudinary");
       }
-
+  
+      // Simpan ke Firestore
       await addDoc(collection(db, "perusahaan"), {
         nama_perusahaan: namaPerusahaan,
         direktur,
@@ -45,17 +48,20 @@ const TambahPerusahaanPage = () => {
         status,
         latitude: koordinat.lat,
         longitude: koordinat.lng,
-        foto_kantor: fotoKantorUrl, // tambahkan field foto_kantor
+        foto_kantor: {
+          public_id: result.public_id,
+          secure_url: result.secure_url,
+        },
         created_at: serverTimestamp(),
         updated_at: serverTimestamp(),
       });
-
+  
       alert("Data perusahaan berhasil ditambahkan.");
       setPreviewUrl(null);
       setFotoKantorFile(null);
-      setTimeout(() => {
-        navigate("/user/perusahaan");
-      }, 300);
+        setTimeout(() => {
+              navigate("/user/perusahaan");
+            }, 300);
     } catch (error) {
       console.error("Gagal menambahkan perusahaan:", error);
       alert("Terjadi kesalahan. Silakan coba lagi.");
@@ -63,6 +69,9 @@ const TambahPerusahaanPage = () => {
       setLoading(false);
     }
   };
+  
+
+
 
   delete L.Icon.Default.prototype._getIconUrl;
   L.Icon.Default.mergeOptions({
