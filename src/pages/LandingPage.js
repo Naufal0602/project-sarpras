@@ -102,19 +102,15 @@ const LandingPage = () => {
   const handleImageClick = async (media) => {
     const matched = galeri.find((item) => item.image === media.image);
     const pekerjaanId = matched?.id_pekerjaan;
-
-    console.log("Gambar diklik, id_pekerjaan:", pekerjaanId);
+    
     if (!pekerjaanId) return;
-    setSelectedPekerjaanId(pekerjaanId);
-    console.log("pekerjaanId",selectedPekerjaanId);
     setShowModal(true);
 
     try {
       const q = query(
         collection(db, "galeri"),
-        where("id_pekerjaan", "==", selectedPekerjaanId)
+        where("id_pekerjaan", "==", pekerjaanId)
       );
-
       const snapshot = await getDocs(q);
       const data = snapshot.docs.map((doc) => ({
         id: doc.id,
@@ -127,7 +123,7 @@ const LandingPage = () => {
       console.error("Gagal fetch galeri pekerjaan:", err);
     }
   };
-  console.log(handleImageClick);
+
 
   return (
     <div className="bg-white bg-fixed text-black min-h-screen">
