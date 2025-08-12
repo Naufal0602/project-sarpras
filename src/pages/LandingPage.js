@@ -12,7 +12,7 @@ const LandingPage = () => {
   const [showModal, setShowModal] = useState(false);
   const [galeriPekerjaan, setGaleriPekerjaan] = useState([]);
   const [galeri, setGaleri] = useState([]);
-  const [selectedYear, setSelectedYear] = useState("all");
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [availableYears, setAvailableYears] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -112,7 +112,6 @@ const LandingPage = () => {
   }, [selectedYear]);
 
   const settings = {
-    conterMode: true,
     centerPadding: "60px",
     dots: true,
     infinite: true,
@@ -127,7 +126,11 @@ const LandingPage = () => {
         settings: { slidesToShow: 3 },
       },
       {
-        breakpoint: 990,
+        breakpoint: 768,
+        settings: { slidesToShow: 2 },
+      },
+      {
+        breakpoint: 480,
         settings: { slidesToShow: 1 },
       },
     ],
@@ -139,6 +142,7 @@ const LandingPage = () => {
 
     if (!pekerjaanId) return;
     setShowModal(true);
+    setLoading(true); // mulai loading
 
     try {
       const q = query(
@@ -155,6 +159,8 @@ const LandingPage = () => {
       setGaleriPekerjaan(data);
     } catch (err) {
       console.error("Gagal fetch galeri pekerjaan:", err);
+    } finally {
+      setLoading(false); // selesai loading
     }
   };
 
@@ -172,7 +178,7 @@ const LandingPage = () => {
                 />
               </div>
             </div>
-            <h1 className="font-serif text-black text-2xl sm:text-3xl font-medium hidden md:block ml-2">
+            <h1 className="font-serif text-orange-400 font-bold text-2xl sm:text-3xl font-medium hidden md:block ml-2">
               SARPRAS
             </h1>
           </div>
@@ -330,15 +336,15 @@ const LandingPage = () => {
 
         <div className="w-full relative py-12">
           <div>
-            <div className="flex w-full justify-between">
-              <h2 className="text-4xl font-bold text-orange-400">
+            <div className="flex flex-col gap-4 lg:flex-row w-full justify-between">
+              <h2 className="text-3xl lg:text-4xl font-bold text-orange-400">
                 Galeri Pekerjaan
               </h2>
               <div className="relative flex border-b-2 border-orange-400 hover:border-2 px-2 transition duration-200">
                 <select
                   value={selectedYear}
                   onChange={(e) => setSelectedYear(e.target.value)}
-                  className="z-10 bg-transparent text-xl pr-12 text-orange-400 border-0  focus:outline-none focus:border-orange-500 transition-colors duration-200 pb-1 appearance-none"
+                  className="z-10 bg-transparent text-xl font-bold pr-12 text-orange-400 border-0  focus:outline-none focus:border-orange-500 transition-colors duration-200 pb-1 appearance-none"
                 >
                   <option value="all">Semua Tahun</option>
                   {availableYears.map((year) => (
@@ -392,7 +398,7 @@ const LandingPage = () => {
             <div className="fixed inset-0 z-50 bg-black bg-opacity-60 flex items-center justify-center px-4">
               <div className="bg-white rounded-lg shadow-lg max-w-3xl w-full p-6 overflow-hidden max-h-[70vh] relative">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-3xl font-extrabold">Galeri Pekerjaan</h2>
+                  <h2 className="text-3xl font-extrabold text-orange-400">Galeri Pekerjaan</h2>
                   <button
                     onClick={() => setShowModal(false)}
                     className="text-gray-500 hover:text-red-500 text-xl font-bold"
@@ -404,21 +410,20 @@ const LandingPage = () => {
                 <div className="flex flex-col mt-8 md:flex-row gap-4 h-96">
                   {/* Kolom Kanan: Galeri */}
                   <div className="w-full relative overflow-scroll">
-                    {galeriPekerjaan.length > 0 ? (
+                    {loading ? (
+                      <LoadingHalf />
+                    ) : galeriPekerjaan.length > 0 ? (
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 overflow-y-auto max-h-full pr-2 pb-14">
                         {galeriPekerjaan.map((item, index) => (
                           <div
                             key={index}
                             className="border rounded overflow-hidden relative group cursor-pointer"
                           >
-                            {/* Gambar */}
                             <img
                               src={item.url_gambar}
                               alt={`Gambar ${index}`}
                               className="w-full h-32 object-cover"
                             />
-
-                            {/* Keterangan */}
                             <p className="text-xs text-center p-1">
                               {item.keterangan || "-"}
                             </p>
