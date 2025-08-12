@@ -28,7 +28,6 @@ const ModalProsesUser = ({ user, onClose }) => {
         templateParams,
         "TNa873KoLNwnqtnCa"
       );
-      console.log("Email terkirim");
     } catch (error) {
       console.error("Gagal kirim email:", error);
     }

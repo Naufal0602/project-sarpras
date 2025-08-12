@@ -103,8 +103,6 @@ const AdminPekerjaanFisikListPage = () => {
       setJudulModal(label || "Galeri");
       setShowModal(true);
 
-      // Debug log
-      console.log("✅ Gambar berhasil dimuat:", gambarData);
     } catch (e) {
       console.error("❌ Gagal ambil galeri:", e);
     }
@@ -266,7 +264,6 @@ const AdminPekerjaanFisikListPage = () => {
             console.error("Gagal mengambil gambar galeri:", e);
           }
 
-          console.log("Pekerjaan:", docSnap.id, "gambar:", gambarThumbnail);
           return {
             id: docSnap.id,
             ...pekerjaan,
@@ -290,20 +287,14 @@ const AdminPekerjaanFisikListPage = () => {
 
   const handleSetThumbnail = async (id_pekerjaan, idGambarDipilih) => {
     try {
-      console.log("🔍 Memulai proses set thumbnail...");
-      console.log("🆔 ID Pekerjaan:", id_pekerjaan);
-      console.log("🖼️ ID Gambar yang Dipilih:", idGambarDipilih);
 
       const galeriRef = collection(db, "galeri");
       const q = query(galeriRef, where("id_pekerjaan", "==", id_pekerjaan));
       const snapshot = await getDocs(q);
 
-      console.log(`📦 Jumlah gambar ditemukan: ${snapshot.size}`);
 
       const batchUpdate = snapshot.docs.map(async (docSnap) => {
         const isSelected = docSnap.id === idGambarDipilih;
-
-        console.log(`➡️ Update ${docSnap.id}: thumbnail = ${isSelected}`);
 
         await updateDoc(doc(db, "galeri", docSnap.id), {
           thumbnail: isSelected,
@@ -312,7 +303,6 @@ const AdminPekerjaanFisikListPage = () => {
 
       await Promise.all(batchUpdate);
 
-      console.log("✅ Semua update selesai.");
       alert("Thumbnail berhasil diatur!");
     } catch (error) {
       console.error("❌ Gagal atur thumbnail:", error);
@@ -334,7 +324,6 @@ const AdminPekerjaanFisikListPage = () => {
 
       const publicIds = querySnapshot.docs.map(doc => doc.data().public_id);
 
-      console.log("Public ID galeri terkait pekerjaan:", publicIds);
       await axios.post("http://localhost:3001/api/cloudinary/", {
         public_id: publicIds,
       });

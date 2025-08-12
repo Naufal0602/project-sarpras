@@ -17,13 +17,9 @@ const UserDashboard = () => {
 
   // Monitor authentication state
   useEffect(() => {
-    console.log("Setting up auth state listener...");
 
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      console.log(
-        "Auth state changed:",
-        user ? "User logged in" : "User logged out"
-      );
+
       setAuthUser(user);
 
       if (!user) {
@@ -33,7 +29,6 @@ const UserDashboard = () => {
     });
 
     return () => {
-      console.log("Cleaning up auth listener");
       unsubscribe();
     };
   }, []);
@@ -41,37 +36,29 @@ const UserDashboard = () => {
   // Fetch user data when auth user changes
   useEffect(() => {
     if (!authUser) {
-      console.log("No authenticated user, skipping data fetch");
       return;
     }
 
-    console.log("Fetching user data for:", authUser.uid);
     setLoading(true);
     setError(null);
 
     const fetchUserData = async () => {
       try {
-        console.log("Creating document reference...");
         const userRef = doc(db, "users", authUser.uid);
 
-        console.log("Fetching document...");
         const userSnap = await getDoc(userRef);
 
-        console.log("Document exists:", userSnap.exists());
 
         if (userSnap.exists()) {
           const data = userSnap.data();
-          console.log("User data received:", data);
           setUserData(data);
         } else {
-          console.log("User document does not exist in Firestore");
           setError("User profile not found. Please contact administrator.");
         }
       } catch (err) {
         console.error("Error fetching user data:", err);
         setError(`Failed to fetch user data: ${err.message}`);
       } finally {
-        console.log("Setting loading to false");
         setLoading(false);
       }
     };

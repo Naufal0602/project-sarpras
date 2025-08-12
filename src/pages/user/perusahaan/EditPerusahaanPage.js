@@ -87,7 +87,6 @@ const EditPerusahaanPage = () => {
           const docRef = doc(db, "perusahaan", id);
           const docSnap = await getDoc(docRef);
           const data = docSnap.data();
-          console.log("Menghapus foto lama:", data.foto_kantor.public_id);
           await axios.post("http://localhost:3001/api/cloudinary/", {
             public_id: data.foto_kantor.public_id,
           });

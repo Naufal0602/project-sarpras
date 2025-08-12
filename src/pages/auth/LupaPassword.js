@@ -11,7 +11,6 @@ const ForgotPassword = () => {
     setLoading(true);
     setMessage(""); // reset pesan dulu
 
-    console.log("[INFO] Memulai proses reset password untuk:", email);
 
     if (!email) {
       setMessage("⚠️ Email wajib diisi!");
@@ -22,7 +21,6 @@ const ForgotPassword = () => {
 
     try {
       await sendPasswordResetEmail(auth, email);
-      console.log("[SUCCESS] Email reset terkirim ke:", email);
       setMessage("✅ Link reset password telah dikirim. Cek email kamu.");
     } catch (err) {
       console.error("[ERROR] Gagal kirim reset password:", err.code, err.message);

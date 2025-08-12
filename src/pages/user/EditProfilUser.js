@@ -15,17 +15,13 @@ const EditProfilePage = () => {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      console.log("Memulai fetch data user...");
-      console.log("id dari URL:", id);
 
       try {
         const userRef = doc(db, "users", id);
-        console.log("Mencoba ambil dokumen user:", userRef.path);
 
         const userSnap = await getDoc(userRef);
 
         if (userSnap.exists()) {
-          console.log("Data user ditemukan:", userSnap.data());
           setNama(userSnap.data().nama || "");
         } else {
           console.warn("Dokumen user tidak ditemukan untuk id:", id);
@@ -46,7 +42,6 @@ const EditProfilePage = () => {
     e.preventDefault();
     setMessage("");
 
-    console.log("Menyimpan perubahan nama:", nama);
     try {
       await updateDoc(doc(db, "users", id), {
         nama: nama,

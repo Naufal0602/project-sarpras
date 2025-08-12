@@ -39,7 +39,6 @@ const LandingPage = () => {
         const sortedYears = Array.from(yearSet).sort((a, b) => b - a);
         setAvailableYears(sortedYears);
 
-        console.log("Tahun tersedia:", sortedYears);
       } catch (err) {
         console.error("Gagal fetch tahun:", err);
       }
@@ -52,25 +51,20 @@ const LandingPage = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        console.log("=== Mulai Fetch Data Galeri ===");
-        console.log("Tahun terpilih:", selectedYear);
 
         const galeriData = [];
         const snapshotPekerjaan = await getDocs(
           collection(db, "pekerjaan_fisik")
         );
-        console.log("Jumlah pekerjaan_fisik:", snapshotPekerjaan.size);
 
         for (const docPekerjaan of snapshotPekerjaan.docs) {
           const pekerjaanId = docPekerjaan.id;
           const pekerjaanData = docPekerjaan.data();
           const createdYear = pekerjaanData.created_at?.toDate().getFullYear();
 
-          console.log(`Pekerjaan ID: ${pekerjaanId}, Tahun: ${createdYear}`);
 
           // Filter tahun
           if (selectedYear !== "all" && createdYear !== Number(selectedYear)) {
-            console.log(`⏩ Skip karena bukan tahun ${selectedYear}`);
             continue;
           }
 
@@ -80,10 +74,7 @@ const LandingPage = () => {
             where("thumbnail", "==", true)
           );
           const snapshotGaleri = await getDocs(qGaleri);
-          console.log(
-            `  Galeri ditemukan untuk ${pekerjaanId}:`,
-            snapshotGaleri.size
-          );
+
 
           snapshotGaleri.forEach((docGaleri) => {
             galeriData.push({
@@ -101,9 +92,7 @@ const LandingPage = () => {
           });
         }
 
-        console.log("Total galeri hasil filter:", galeriData.length);
         setGaleri(galeriData);
-        console.log("=== Selesai Fetch Data Galeri ===");
       } catch (err) {
         console.error("Gagal fetch data:", err);
       } finally {
@@ -164,7 +153,6 @@ const LandingPage = () => {
         url_gambar: doc.data().url_gambar,
         keterangan: doc.data().keterangan,
       }));
-      console.log("data", data);
       setGaleriPekerjaan(data);
     } catch (err) {
       console.error("Gagal fetch galeri pekerjaan:", err);

@@ -246,8 +246,6 @@ const AdminUserListPage = () => {
                 selectedLevels.includes(String(user.level)))
           );
 
-    console.log("Data yang akan di-export ke Excel:", filteredUsers);
-
     // Format data ke array of arrays atau array of objects
     const dataToExport = filteredUsers.map((user, index) => ({
       No: index + 1,

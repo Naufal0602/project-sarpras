@@ -33,7 +33,6 @@ const TambahPerusahaanPage = () => {
     try {
       // Upload foto ke Cloudinary
       const result = await uploadToCloudinary(fotoKantorFile);
-      console.log(result);
   
       // Pastikan data Cloudinary punya public_id dan secure_url
       if (!result?.public_id || !result?.secure_url) {
