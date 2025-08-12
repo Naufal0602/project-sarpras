@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../services/firebase";
@@ -10,11 +10,14 @@ import LoadingHalf from "../components/LoadingHalf";
 
 const LandingPage = () => {
   const [showModal, setShowModal] = useState(false);
+  const [isFetchingPekerjaan, setIsFetchingPekerjaan] = useState(false);
   const [galeriPekerjaan, setGaleriPekerjaan] = useState([]);
   const [galeri, setGaleri] = useState([]);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [availableYears, setAvailableYears] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [slidesToShow, setSlidesToShow] = useState(1);
+  const sliderRef = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -111,30 +114,36 @@ const LandingPage = () => {
     fetchData();
   }, [selectedYear]);
 
-  const settings = {
+
+  // Atur jumlah slide awal sesuai lebar layar
+  useEffect(() => {
+    const updateSlides = () => {
+      if (window.innerWidth <= 480) setSlidesToShow(1);
+      else if (window.innerWidth <= 768) setSlidesToShow(2);
+      else if (window.innerWidth <= 1028) setSlidesToShow(3);
+      else setSlidesToShow(1);
+    };
+    updateSlides(); // panggil sekali saat mount
+    window.addEventListener("resize", updateSlides);
+    return () => window.removeEventListener("resize", updateSlides);
+  }, []);
+
+  // Memo biar settings gak bikin re-init slider
+  const settings = useMemo(() => ({
     centerPadding: "60px",
     dots: true,
     infinite: true,
     speed: 800,
-    slidesToShow: 3,
+    slidesToShow,
     slidesToScroll: 1,
     autoplay: true,
     autoplaySpeed: 3000,
     responsive: [
-      {
-        breakpoint: 1028,
-        settings: { slidesToShow: 3 },
-      },
-      {
-        breakpoint: 768,
-        settings: { slidesToShow: 2 },
-      },
-      {
-        breakpoint: 480,
-        settings: { slidesToShow: 1 },
-      },
+      { breakpoint: 1028, settings: { slidesToShow: 3 } },
+      { breakpoint: 768, settings: { slidesToShow: 2 } },
+      { breakpoint: 480, settings: { slidesToShow: 1 } },
     ],
-  };
+  }), [slidesToShow]);
 
   const handleImageClick = async (media) => {
     const matched = galeri.find((item) => item.image === media.image);
@@ -142,7 +151,7 @@ const LandingPage = () => {
 
     if (!pekerjaanId) return;
     setShowModal(true);
-    setLoading(true); // mulai loading
+  setIsFetchingPekerjaan(true);
 
     try {
       const q = query(
@@ -160,8 +169,8 @@ const LandingPage = () => {
     } catch (err) {
       console.error("Gagal fetch galeri pekerjaan:", err);
     } finally {
-      setLoading(false); // selesai loading
-    }
+       setIsFetchingPekerjaan(false);
+  }
   };
 
   return (
@@ -361,9 +370,11 @@ const LandingPage = () => {
               </div>
             </div>
             {loading ? (
-              <LoadingHalf /> // tampilkan komponen loading
+              <div className="mt-16">
+              <LoadingHalf/>
+              </div>
             ) : (
-              <Slider {...settings}>
+              <Slider  ref={sliderRef} {...settings}>
                 {galeri.map((media) => (
                   <div
                     key={media.id}
@@ -410,7 +421,7 @@ const LandingPage = () => {
                 <div className="flex flex-col mt-8 md:flex-row gap-4 h-96">
                   {/* Kolom Kanan: Galeri */}
                   <div className="w-full relative overflow-scroll">
-                    {loading ? (
+                    {isFetchingPekerjaan ? (
                       <LoadingHalf />
                     ) : galeriPekerjaan.length > 0 ? (
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 overflow-y-auto max-h-full pr-2 pb-14">
