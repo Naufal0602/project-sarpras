@@ -542,7 +542,6 @@ const AdminPekerjaanFisikListPage = () => {
         </div>
 
         <DataTable
-          className="bg-black"
           columns={columns}
           data={filteredData}
           progressPending={loading}

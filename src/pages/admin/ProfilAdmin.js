@@ -6,6 +6,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import LogoutButton from "../../components/LogoutButton";
 import AdminSidebar from "../../components/template/AdminSideBar";
 import AdminNavbar from "../../components/template/AdminNavBar";
+import Loading from "../../components/Loading";
 
 const UserProfile = () => {
   const navigate = useNavigate();
@@ -48,19 +49,9 @@ const UserProfile = () => {
     fetchUserData();
   }, [authUser]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-orange-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600 text-lg">
-            Memuat profil pengguna...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
+   if (loading) {
+      return <Loading text="Loading..." />;
+    }
   if (error) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">

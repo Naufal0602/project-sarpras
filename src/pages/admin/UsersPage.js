@@ -18,6 +18,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
+import { PencilLine, Trash2 } from "lucide-react";
 
 const roleOptions = ["admin", "user-sd", "user-paud", "user-smp"];
 const levelOptions = [1, 2];
@@ -331,16 +332,16 @@ const AdminUserListPage = () => {
     {
       name: "Aksi",
       cell: (row) => (
-        <div className="space-x-2">
+        <div className="flex gap-2 justify-center items-center">
           <button
             onClick={() => handleDelete(row.id)}
             className="bg-red-500 text-white px-2 py-1 rounded"
           >
-            Hapus
+           <Trash2 className="w-4 h-4" />
           </button>
           <Link to={`/admin/edit-user/${row.id}`}>
             <button className="bg-blue-500 text-white px-2 py-1 rounded">
-              Edit
+              <PencilLine className="w-4 h-4" />
             </button>
           </Link>
         </div>

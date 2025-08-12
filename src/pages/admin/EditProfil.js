@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import AdminSidebar from "../../components/template/AdminSideBar";
 import AdminNavbar from "../../components/template/AdminNavBar";
+import Loading from "../../components/Loading";
 
 const EditUserProfile = () => {
   const [nama, setNama] = useState("");
@@ -64,12 +65,8 @@ const EditUserProfile = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="text-center">Loading...</div>
-      </div>
-    );
-  }
+      return <Loading text="Loading..." />;
+    }
 
   return (
     <div className="flex min-h-screen bg-gray-50">

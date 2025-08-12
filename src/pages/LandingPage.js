@@ -5,77 +5,111 @@ import { db } from "../services/firebase";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
+import { ChevronDown } from "lucide-react";
+import LoadingHalf from "../components/LoadingHalf";
 
 const LandingPage = () => {
   const [showModal, setShowModal] = useState(false);
-  const [selectedPekerjaanId, setSelectedPekerjaanId] = useState(null);
   const [galeriPekerjaan, setGaleriPekerjaan] = useState([]);
   const [galeri, setGaleri] = useState([]);
+  const [selectedYear, setSelectedYear] = useState("all");
+  const [availableYears, setAvailableYears] = useState([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchGaleriWithDetails = async () => {
+    const fetchYears = async () => {
       try {
-        // 1. Ambil data galeri (thumbnail)
-        const qGaleri = query(
-          collection(db, "galeri"),
-          where("thumbnail", "==", true)
+        const snapshotPekerjaan = await getDocs(
+          collection(db, "pekerjaan_fisik")
         );
-        const snapshotGaleri = await getDocs(qGaleri);
+        const yearSet = new Set();
 
-        const galeriData = [];
-
-        for (const docGaleri of snapshotGaleri.docs) {
-          const galeriItem = {
-            id: docGaleri.id,
-            image: docGaleri.data().url_gambar,
-            text: docGaleri.data().keterangan,
-            id_pekerjaan: docGaleri.data().id_pekerjaan,
-          };
-
-          // 2. Ambil data pekerjaan_fisik
-          const pekerjaanRef = collection(db, "pekerjaan_fisik");
-          const qPekerjaan = query(
-            pekerjaanRef,
-            where("__name__", "==", galeriItem.id_pekerjaan)
-          );
-          const snapshotPekerjaan = await getDocs(qPekerjaan);
-          const pekerjaanData = snapshotPekerjaan.docs[0]?.data();
-
-          if (pekerjaanData) {
-            galeriItem.pekerjaan = {
-              jenis_pekerjaan: pekerjaanData.jenis_pekerjaan,
-              sekolah: pekerjaanData.sekolah,
-              id_perusahaan: pekerjaanData.id_perusahaan,
-            };
-
-            // 3. Ambil data perusahaan
-            const perusahaanRef = collection(db, "perusahaan");
-            const qPerusahaan = query(
-              perusahaanRef,
-              where("__name__", "==", pekerjaanData.perusahaan_id)
-            );
-            const snapshotPerusahaan = await getDocs(qPerusahaan);
-            const perusahaanData = snapshotPerusahaan.docs[0]?.data();
-
-            if (perusahaanData) {
-              galeriItem.perusahaan = {
-                nama: perusahaanData.nama_perusahaan, // sesuaikan nama field
-              };
-            }
+        snapshotPekerjaan.forEach((doc) => {
+          const createdYear = doc.data().created_at?.toDate().getFullYear();
+          if (createdYear) {
+            yearSet.add(createdYear);
           }
+        });
 
-          galeriData.push(galeriItem);
-        }
+        // Urutkan tahun dari terbesar ke kecil
+        const sortedYears = Array.from(yearSet).sort((a, b) => b - a);
+        setAvailableYears(sortedYears);
 
-        setGaleri(galeriData);
+        console.log("Tahun tersedia:", sortedYears);
       } catch (err) {
-        console.error("Gagal fetch galeri dengan detail:", err);
+        console.error("Gagal fetch tahun:", err);
       }
     };
 
-    fetchGaleriWithDetails();
+    fetchYears();
   }, []);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        console.log("=== Mulai Fetch Data Galeri ===");
+        console.log("Tahun terpilih:", selectedYear);
+
+        const galeriData = [];
+        const snapshotPekerjaan = await getDocs(
+          collection(db, "pekerjaan_fisik")
+        );
+        console.log("Jumlah pekerjaan_fisik:", snapshotPekerjaan.size);
+
+        for (const docPekerjaan of snapshotPekerjaan.docs) {
+          const pekerjaanId = docPekerjaan.id;
+          const pekerjaanData = docPekerjaan.data();
+          const createdYear = pekerjaanData.created_at?.toDate().getFullYear();
+
+          console.log(`Pekerjaan ID: ${pekerjaanId}, Tahun: ${createdYear}`);
+
+          // Filter tahun
+          if (selectedYear !== "all" && createdYear !== Number(selectedYear)) {
+            console.log(`⏩ Skip karena bukan tahun ${selectedYear}`);
+            continue;
+          }
+
+          const qGaleri = query(
+            collection(db, "galeri"),
+            where("id_pekerjaan", "==", pekerjaanId),
+            where("thumbnail", "==", true)
+          );
+          const snapshotGaleri = await getDocs(qGaleri);
+          console.log(
+            `  Galeri ditemukan untuk ${pekerjaanId}:`,
+            snapshotGaleri.size
+          );
+
+          snapshotGaleri.forEach((docGaleri) => {
+            galeriData.push({
+              id: docGaleri.id,
+              image: docGaleri.data().url_gambar,
+              text: docGaleri.data().keterangan,
+              id_pekerjaan: pekerjaanId,
+              created_year: createdYear,
+              pekerjaan: {
+                jenis_pekerjaan: pekerjaanData.jenis_pekerjaan,
+                sekolah: pekerjaanData.sekolah,
+                id_perusahaan: pekerjaanData.id_perusahaan,
+              },
+            });
+          });
+        }
+
+        console.log("Total galeri hasil filter:", galeriData.length);
+        setGaleri(galeriData);
+        console.log("=== Selesai Fetch Data Galeri ===");
+      } catch (err) {
+        console.error("Gagal fetch data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [selectedYear]);
 
   const settings = {
     conterMode: true,
@@ -102,7 +136,7 @@ const LandingPage = () => {
   const handleImageClick = async (media) => {
     const matched = galeri.find((item) => item.image === media.image);
     const pekerjaanId = matched?.id_pekerjaan;
-    
+
     if (!pekerjaanId) return;
     setShowModal(true);
 
@@ -124,7 +158,6 @@ const LandingPage = () => {
     }
   };
 
-
   return (
     <div className="bg-white bg-fixed text-black min-h-screen">
       <div className="container mx-auto p-8 overflow-hidden md:rounded-lg md:p-10 lg:p-12">
@@ -144,7 +177,7 @@ const LandingPage = () => {
             </h1>
           </div>
           <button
-            className="border border-orange-500 text-black hover:bg-gray-50 px-4 py-2 rounded hover:bg-white hover:text-black transition duration-200"
+            className="border border-orange-500 text-black px-4 py-2 rounded hover:bg-orange-500 hover:text-white transition duration-200"
             onClick={() => navigate("/login")}
           >
             Login
@@ -201,7 +234,7 @@ const LandingPage = () => {
               </div>
             </div>
           </div>
-          <div className="aspect-square w-96 lg:w-[100rem] lg:ml-24 bg-[url('./gambar2.png')] bg-cover bg-center"></div>
+          <div className="aspect-square w-60 lg:w-[100rem] lg:ml-24 bg-[url('./gambar1.png')] bg-cover bg-center"></div>
         </div>
 
         <div className="h-32 md:h-40"></div>
@@ -297,39 +330,61 @@ const LandingPage = () => {
 
         <div className="w-full relative py-12">
           <div>
-            <h2 className="text-4xl font-bold text-orange-400">
-              Galeri Pekerjaan
-            </h2>
-            <Slider {...settings}>
-              {galeri.map((media) => (
-                <div
-                  key={media.id}
-                  onClick={() => handleImageClick(media)}
-                  className="flex justify-center items-center"
-                  title={`Pekerjaan ${
-                    media.pekerjaan?.jenis_pekerjaan || ""
-                  }, yang dilakukan di sekolah ${
-                    media.pekerjaan?.sekolah || ""
-                  } oleh ${media.perusahaan?.nama || ""}`}
+            <div className="flex w-full justify-between">
+              <h2 className="text-4xl font-bold text-orange-400">
+                Galeri Pekerjaan
+              </h2>
+              <div className="relative flex border-b-2 border-orange-400 hover:border-2 px-2 transition duration-200">
+                <select
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(e.target.value)}
+                  className="z-10 bg-transparent text-xl pr-12 text-orange-400 border-0  focus:outline-none focus:border-orange-500 transition-colors duration-200 pb-1 appearance-none"
                 >
-                  <div className="h-72 flex justify-center items-center flex-col">
-                    <img
-                      src={media.image}
-                      alt={media.text}
-                      style={{
-                        maxHeight: "300px",
-                        width: "auto",
-                        cursor: "pointer",
-                        borderRadius: "8px",
-                      }}
-                    />
-                    <p style={{ textAlign: "center", marginTop: "8px" }}>
-                      {media.text}
-                    </p>
+                  <option value="all">Semua Tahun</option>
+                  {availableYears.map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown
+                  size={18}
+                  className="absolute text-orange-400"
+                  style={{ right: "0px", marginTop: "11px" }}
+                />
+              </div>
+            </div>
+            {loading ? (
+              <LoadingHalf /> // tampilkan komponen loading
+            ) : (
+              <Slider {...settings}>
+                {galeri.map((media) => (
+                  <div
+                    key={media.id}
+                    onClick={() => handleImageClick(media)}
+                    className="flex justify-center items-center"
+                    title={`Pekerjaan ${
+                      media.pekerjaan?.jenis_pekerjaan || ""
+                    }, yang dilakukan di sekolah ${
+                      media.pekerjaan?.sekolah || ""
+                    } oleh ${media.perusahaan?.nama || ""}`}
+                  >
+                    <div className="h-72 flex justify-center items-center flex-col">
+                      <img
+                        src={media.image}
+                        alt={media.text}
+                        style={{
+                          maxHeight: "300px",
+                          width: "auto",
+                          cursor: "pointer",
+                          borderRadius: "8px",
+                        }}
+                      />
+                    </div>
                   </div>
-                </div>
-              ))}
-            </Slider>
+                ))}
+              </Slider>
+            )}
           </div>
 
           {/* Modal untuk galeri pekerjaan */}
@@ -375,8 +430,6 @@ const LandingPage = () => {
                         Tidak ada gambar untuk pekerjaan ini.
                       </p>
                     )}
-
-           
                   </div>
                 </div>
               </div>

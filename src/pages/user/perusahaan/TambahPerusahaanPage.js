@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../../../services/firebase";
 import { useNavigate } from "react-router-dom";
-import AdminNavbar from "../../../components/template/AdminNavBar";
+import AdminNavbar from "../../../components/template/Navbar";
 import Sidebar from "../../../components/template/SideBar";
 import { uploadToCloudinary } from "../../../services/cloudinaryService";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";

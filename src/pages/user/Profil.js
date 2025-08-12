@@ -76,7 +76,9 @@ const UserProfile = () => {
       </div>
     );
   }
-
+ if (loading) {
+    return <Loading text="Loading..." />;
+  }
   return (
     <div className="flex min-h-screen bg-gray-50">
       <div className="fixed">

@@ -295,21 +295,15 @@ const AdminPerusahaanListPage = () => {
                   <Link
                     to={`/user/perusahaan/edit/${row.id}`}
                     className="group bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm flex items-center justify-center transition-all duration-300"
-                  >
-                    <span className="group-hover:hidden">
+                  >                  
                       <PencilLine className="w-4 h-4" />
-                    </span>
-                    <span className="hidden group-hover:inline">Ubah</span>
                   </Link>
 
                   <button
                     onClick={() => handleDeletePerusahaan(row.id)}
                     className="group bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm flex items-center justify-center transition-all duration-300"
                   >
-                    <span className="group-hover:hidden">
                       <Trash2 className="w-4 h-4" />
-                    </span>
-                    <span className="hidden group-hover:inline">Hapus</span>
                   </button>
                 </div>
                 <div className="w-full">
@@ -317,8 +311,7 @@ const AdminPerusahaanListPage = () => {
                     onClick={() => handleShowPekerjaanModal(row)}
                     className="group w-full bg-green-400 hover:bg-green-700 text-white px-3 py-1 rounded text-sm flex items-center justify-center transition-all duration-300"
                   >
-                    <span className="group-hover:hidden">📄</span>
-                    <span className="hidden group-hover:inline">Detail</span>
+                    <span>📄</span>
                   </button>
                 </div>
               </div>
@@ -346,7 +339,7 @@ const AdminPerusahaanListPage = () => {
 
       {/* Konten utama */}
       <div className="flex-1 md:ml-72 pt-20 p-8 w-full">
-        <div className="flex justify-between mb-4">
+        <div className="xl:flex sm:flex-row xl:justify-between mb-4">
           <h2 className="text-2xl font-bold mb-6 text-orange-600">
             Daftar Perusahaan
           </h2>
@@ -354,21 +347,21 @@ const AdminPerusahaanListPage = () => {
           <div className="flex items-center gap-2">
             {userData?.level === 2 && (
               <Link to="/user/perusahaan/tambah">
-                <button className="bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded">
+                <button className="bg-green-600 hover:bg-green-700 text-white font-semibold lg:px-4 py-2 px-2 rounded">
                   + Tambah Perusahaan
                 </button>
               </Link>
             )}
             <button
               onClick={() => setShowExportModal(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold lg:px-4 px-2 py-2 rounded"
             >
               Export
             </button>
           </div>
         </div>
 
-        <div className="flex flex-row gap-2 justify-between w-full md:w-auto mb-4">
+        <div className="flex flex-col lg:flex-row gap-2 justify-between w-full md:w-auto mb-4">
           <div className="flex items-center gap-2">
             <label className="mr-2 font-medium text-gray-700">
               Filter Status:
@@ -380,7 +373,7 @@ const AdminPerusahaanListPage = () => {
             >
               <option value="semua">Semua</option>
               <option value="aktif">Aktif</option>
-              <option value="tidak aktif">Nonaktif</option>
+              <option value="tidak aktif">Tidak Aktif</option>
             </select>
           </div>
 
