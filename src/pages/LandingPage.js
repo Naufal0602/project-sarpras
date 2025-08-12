@@ -349,7 +349,7 @@ const LandingPage = () => {
               <h2 className="text-3xl lg:text-4xl font-bold text-orange-400">
                 Galeri Pekerjaan
               </h2>
-              <div className="relative flex border-b-2 border-orange-400 hover:border-2 px-2 transition duration-200">
+              <div className="relative w-40 flex border-b-2 border-orange-400 hover:border-2 px-2 transition duration-200">
                 <select
                   value={selectedYear}
                   onChange={(e) => setSelectedYear(e.target.value)}
