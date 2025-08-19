@@ -13,7 +13,7 @@ import Navbar from "../../../components/template/Navbar.js";
 import Sidebar from "../../../components/template/SideBar.js";
 import { Link } from "react-router-dom";
 import DataTable from "react-data-table-component";
-import { PencilLine, Trash2, MapPin } from "lucide-react";
+import { PencilLine, Trash2, MapPin, FileText } from "lucide-react";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import jsPDF from "jspdf";
@@ -110,7 +110,6 @@ const AdminPerusahaanListPage = () => {
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportStatus, setExportStatus] = useState("semua");
 
-  // Format tanggal dan nama file
   const getFormattedNow = () => {
     const now = new Date();
     const pad = (n) => String(n).padStart(2, "0");
@@ -165,7 +164,7 @@ const AdminPerusahaanListPage = () => {
     doc.setLineWidth(0.5);
     doc.setDrawColor(0);
 
-    // Tabel data
+    // zTabel data
     autoTable(doc, {
       startY: 35,
       head: [
@@ -295,15 +294,15 @@ const AdminPerusahaanListPage = () => {
                   <Link
                     to={`/user/perusahaan/edit/${row.id}`}
                     className="group bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm flex items-center justify-center transition-all duration-300"
-                  >                  
-                      <PencilLine className="w-4 h-4" />
+                  >
+                    <PencilLine className="w-4 h-4" />
                   </Link>
 
                   <button
                     onClick={() => handleDeletePerusahaan(row.id)}
                     className="group bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm flex items-center justify-center transition-all duration-300"
                   >
-                      <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
                 <div className="w-full">
@@ -311,7 +310,7 @@ const AdminPerusahaanListPage = () => {
                     onClick={() => handleShowPekerjaanModal(row)}
                     className="group w-full bg-green-400 hover:bg-green-700 text-white px-3 py-1 rounded text-sm flex items-center justify-center transition-all duration-300"
                   >
-                    <span>📄</span>
+                    <span><FileText className="w-4 h-4"/></span>
                   </button>
                 </div>
               </div>
@@ -325,9 +324,14 @@ const AdminPerusahaanListPage = () => {
     .filter((item) =>
       selectedStatus === "semua" ? true : item.status === selectedStatus
     )
-    .filter((item) =>
-      item.nama_perusahaan?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    .filter((item) => {
+      const term = searchTerm.toLowerCase();
+      return (
+        item.nama_perusahaan?.toLowerCase().includes(term) ||
+        item.direktur?.toLowerCase().includes(term) ||
+        item.alamat?.toLowerCase().includes(term)
+      );
+    });
 
   return (
     <div className="flex min-h-screen">
@@ -378,12 +382,12 @@ const AdminPerusahaanListPage = () => {
           </div>
 
           <div className="flex items-center gap-2 w-full md:w-auto">
-            <label className="mr-2 font-medium text-gray-700">Cari Nama:</label>
+            <label className="mr-2 font-medium text-gray-700">Cari:</label>
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Masukkan nama perusahaan"
+              placeholder="Cari"
               className="border border-gray-300 px-3 py-1 rounded w-full md:w-64"
             />
           </div>

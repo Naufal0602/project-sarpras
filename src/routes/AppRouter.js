@@ -15,6 +15,7 @@ import EditProfil from "../pages/admin/EditProfil.js";
 import UserDashboard from "../pages/user/dashboard.js";
 import UserProfil from "../pages/user/Profil.js";
 import UserEditProfil from "../pages/user/EditProfilUser.js";
+import GantiPassword from "../pages/user/GantiPassword.js";
 
 import UserPerusahaan from "../pages/user/perusahaan/index.js";
 import UserTambahPerusahaan from "../pages/user/perusahaan/TambahPerusahaanPage.js";
@@ -57,6 +58,7 @@ const AppRouter = () => {
           <Route path="/user/dashboard" element={<UserDashboard />} />
           <Route path="/user/profil" element={<UserProfil />} />
           <Route path="/user/edit-profile/:id" element={<UserEditProfil />} />
+          <Route path="/user/ganti-password" element={<GantiPassword />} />
           <Route path="/user/perusahaan" element={<UserPerusahaan />} />
           <Route path="/user/perusahaan/tambah" element={<UserTambahPerusahaan />} />
           <Route path="/user/perusahaan/edit/:id" element={<UserEditPerusahaan />} />

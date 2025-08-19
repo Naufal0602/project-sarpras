@@ -102,7 +102,6 @@ const AdminPekerjaanFisikListPage = () => {
       setGambarList(gambarData);
       setJudulModal(label || "Galeri");
       setShowModal(true);
-
     } catch (e) {
       console.error("❌ Gagal ambil galeri:", e);
     }
@@ -287,11 +286,9 @@ const AdminPekerjaanFisikListPage = () => {
 
   const handleSetThumbnail = async (id_pekerjaan, idGambarDipilih) => {
     try {
-
       const galeriRef = collection(db, "galeri");
       const q = query(galeriRef, where("id_pekerjaan", "==", id_pekerjaan));
       const snapshot = await getDocs(q);
-
 
       const batchUpdate = snapshot.docs.map(async (docSnap) => {
         const isSelected = docSnap.id === idGambarDipilih;
@@ -322,7 +319,7 @@ const AdminPekerjaanFisikListPage = () => {
       const q = query(galeriRef, where("id_pekerjaan", "==", id));
       const querySnapshot = await getDocs(q);
 
-      const publicIds = querySnapshot.docs.map(doc => doc.data().public_id);
+      const publicIds = querySnapshot.docs.map((doc) => doc.data().public_id);
 
       await axios.post("http://localhost:3001/api/cloudinary/", {
         public_id: publicIds,
@@ -444,20 +441,20 @@ const AdminPekerjaanFisikListPage = () => {
                     to={`/user/pekerjaan-fisik/edit/${row.id}`}
                     className="group bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm flex items-center justify-center transition-all duration-300"
                   >
-                    <span className="group-hover:hidden">
+                    <span className="lg:group-hover:hidden">
                       <PencilLine className="w-4 h-4" />
                     </span>
-                    <span className="hidden group-hover:inline">Ubah</span>
+                    <span className="hidden lg:group-hover:inline">Ubah</span>
                   </Link>
 
                   <button
                     onClick={() => handleDelete(row.id)}
                     className="group bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm flex items-center justify-center transition-all duration-300"
                   >
-                    <span className="group-hover:hidden">
+                    <span className="lg:group-hover:hidden">
                       <Trash2 className="w-4 h-4" />
                     </span>
-                    <span className="hidden group-hover:inline">Hapus</span>
+                    <span className="hidden lg:group-hover:inline">Hapus</span>
                   </button>
                 </div>
                 <div>
@@ -465,10 +462,12 @@ const AdminPekerjaanFisikListPage = () => {
                     onClick={() => openGaleriModal(row.id, row.jenis_pekerjaan)}
                     className="group bg-green-500 hover:bg-green-700 w-full text-white px-3 py-1 rounded text-sm flex items-center justify-center transition-all duration-300"
                   >
-                    <span className="group-hover:hidden">
+                    <span className="lg:group-hover:hidden ">
                       <GalleryHorizontal className="w-4 h-4" />
                     </span>
-                    <span className="hidden group-hover:inline">Galeri</span>
+                    <span className="hidden lg:group-hover:inline group-hover:hidden ">
+                      Galeri
+                    </span>
                   </button>
                 </div>
               </div>
@@ -544,9 +543,9 @@ const AdminPekerjaanFisikListPage = () => {
 
       {showModal && (
         <div className="fixed inset-0 z-50 bg-black bg-opacity-60 flex items-center justify-center px-4">
-          <div className="bg-white rounded-lg shadow-lg max-w-5xl w-full p-6 overflow-hidden max-h-[90vh] relative">
+          <div className="bg-white rounded-lg shadow-lg max-w-5xl w-full relative p-6 overflow-hidden max-h-[90vh] relative">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-3xl font-extrabold">{judulModal}</h2>
+              <h2 className="text-xl lg:text-3xl font-extrabold">{judulModal}</h2>
               <button
                 onClick={() => setShowModal(false)}
                 className="text-gray-500 hover:text-red-500 text-xl font-bold"
@@ -557,8 +556,8 @@ const AdminPekerjaanFisikListPage = () => {
 
             <div className="flex flex-col mt-8 md:flex-row gap-4 h-[75vh]">
               {/* Kolom Kiri: Detail Informasi */}
-              <div className="md:w-1/2 overflow-y-auto pr-4 border-r">
-                <div className="space-y-2 text-lg">
+              <div className="md:w-1/2 md:h-full h-1/2 w-full overflow-y-auto pr-4 border-r">
+                <div className="space-y-2 lg:text-lg text-md">
                   <p>
                     <span className="font-semibold">Perusahaan:</span>{" "}
                     {selectedData?.perusahaan_nama || "-"}
@@ -584,7 +583,7 @@ const AdminPekerjaanFisikListPage = () => {
               </div>
 
               {/* Kolom Kanan: Galeri */}
-              <div className="md:w-1/2 relative">
+              <div className="md:w-1/2 md:h-full h-1/2 w-full relative">
                 {gambarList.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 overflow-y-auto max-h-full pr-2 pb-14">
                     {gambarList.map((item, index) => (
@@ -672,16 +671,15 @@ const AdminPekerjaanFisikListPage = () => {
                     Tidak ada gambar untuk pekerjaan ini.
                   </p>
                 )}
-
-                {/* Tombol Tambah Gambar */}
-                <div className="absolute bottom-0 right-0 p-2">
-                  <Link
-                    to={`/user/pekerjaan-fisik/galeri/tambah/${selectedData?.id}`}
-                    className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded shadow"
-                  >
-                    + Tambah Gambar
-                  </Link>
-                </div>
+              </div>
+              {/* Tombol Tambah Gambar */}
+              <div className="absolute bottom-4 right-4 p-2">
+                <Link
+                  to={`/user/pekerjaan-fisik/galeri/tambah/${selectedData?.id}`}
+                  className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded shadow"
+                >
+                  + Tambah Gambar
+                </Link>
               </div>
             </div>
           </div>

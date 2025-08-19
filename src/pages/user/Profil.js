@@ -119,6 +119,12 @@ const UserProfile = () => {
                 >
                   Edit Profil
                 </Link>
+                 <Link
+                  to={`/user/ganti-password`}
+                  className="ml-4 bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors font-medium"
+                >
+                  Ganti password
+                </Link>
               </div>
             </div>
           </div>

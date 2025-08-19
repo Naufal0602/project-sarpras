@@ -62,7 +62,6 @@ const LandingPage = () => {
           const pekerjaanData = docPekerjaan.data();
           const createdYear = pekerjaanData.created_at?.toDate().getFullYear();
 
-
           // Filter tahun
           if (selectedYear !== "all" && createdYear !== Number(selectedYear)) {
             continue;
@@ -84,8 +83,7 @@ const LandingPage = () => {
               id_pekerjaan: pekerjaanId,
               created_year: createdYear,
               pekerjaan: {
-                jenis_pekerjaan: pekerjaanData.jenis_pekerjaan,
-                sekolah: pekerjaanData.sekolah,
+                deskripsi: pekerjaanData.deskripsi,
                 id_perusahaan: pekerjaanData.id_perusahaan,
               },
             });
@@ -107,9 +105,11 @@ const LandingPage = () => {
   // Atur jumlah slide awal sesuai lebar layar
   useEffect(() => {
     const updateSlides = () => {
+      console.log(window.innerWidth);
       if (window.innerWidth <= 480) setSlidesToShow(1);
       else if (window.innerWidth <= 768) setSlidesToShow(2);
       else if (window.innerWidth <= 1028) setSlidesToShow(3);
+      else if (window.innerWidth <= 1440) setSlidesToShow(3);
       else setSlidesToShow(1);
     };
     updateSlides(); // panggil sekali saat mount
@@ -128,6 +128,7 @@ const LandingPage = () => {
     autoplay: true,
     autoplaySpeed: 3000,
     responsive: [
+      { breakpoint: 1440, settings: { slidesToShow: 3 } },
       { breakpoint: 1028, settings: { slidesToShow: 3 } },
       { breakpoint: 768, settings: { slidesToShow: 2 } },
       { breakpoint: 480, settings: { slidesToShow: 1 } },
@@ -368,11 +369,9 @@ const LandingPage = () => {
                     key={media.id}
                     onClick={() => handleImageClick(media)}
                     className="flex justify-center items-center"
-                    title={`Pekerjaan ${
-                      media.pekerjaan?.jenis_pekerjaan || ""
-                    }, yang dilakukan di sekolah ${
-                      media.pekerjaan?.sekolah || ""
-                    } oleh ${media.perusahaan?.nama || ""}`}
+                    title={
+                      media.pekerjaan?.deskripsi || console.log(media.pekerjaan)
+                    }
                   >
                     <div className="h-72 flex justify-center items-center flex-col">
                       <img
