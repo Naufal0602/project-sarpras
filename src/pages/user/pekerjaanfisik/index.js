@@ -40,6 +40,7 @@ const AdminPekerjaanFisikListPage = () => {
   const [selectedData, setSelectedData] = useState(null);
   const userData = JSON.parse(localStorage.getItem("user"));
   const isLevel2 = userData?.level === 2;
+  const isLevel1 = userData?.level === 1;
   const role = userData?.role; // e.g. 'user-smp'
   const [showModal, setShowModal] = useState(false);
   const [gambarList, setGambarList] = useState([]);
@@ -430,6 +431,30 @@ const AdminPekerjaanFisikListPage = () => {
       selector: (row) => formatDate(row.created_at),
       sortable: true,
     },
+    ...(isLevel1
+      ? [
+    {
+      name: "Aksi",
+      cell: (row) => (
+        <div className="flex  sm:flex-col gap-2">
+          <div>
+            <button
+              onClick={() => openGaleriModal(row.id, row.jenis_pekerjaan)}
+              className="group bg-green-500 hover:bg-green-700 w-full text-white px-3 py-1 rounded text-sm flex items-center justify-center transition-all duration-300"
+            >
+              <span className="lg:group-hover:hidden ">
+                <GalleryHorizontal className="w-4 h-4" />
+              </span>
+              <span className="hidden lg:group-hover:inline group-hover:hidden ">
+                Galeri
+              </span>
+            </button>
+          </div>
+        </div>
+      ),
+    },
+     ]
+      : []),
     ...(isLevel2
       ? [
           {
@@ -545,7 +570,9 @@ const AdminPekerjaanFisikListPage = () => {
         <div className="fixed inset-0 z-50 bg-black bg-opacity-60 flex items-center justify-center px-4">
           <div className="bg-white rounded-lg shadow-lg max-w-5xl w-full relative p-6 overflow-hidden max-h-[90vh] relative">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl lg:text-3xl font-extrabold">{judulModal}</h2>
+              <h2 className="text-xl lg:text-3xl font-extrabold">
+                {judulModal}
+              </h2>
               <button
                 onClick={() => setShowModal(false)}
                 className="text-gray-500 hover:text-red-500 text-xl font-bold"
@@ -609,16 +636,18 @@ const AdminPekerjaanFisikListPage = () => {
                         </p>
 
                         {/* Overlay saat hover dan klik */}
+
                         <div
                           className={`
-              absolute top-0 left-0 w-full h-full
-              bg-black bg-opacity-40 backdrop-blur-sm
-              items-center justify-center gap-2
-              hidden group-hover:flex
-              ${activeImageId === item.id ? "flex" : ""}
-              transition-all duration-300 z-10
-            `}
+    absolute top-0 left-0 w-full h-full
+    bg-black bg-opacity-40 backdrop-blur-sm
+    items-center justify-center gap-2
+    hidden group-hover:flex
+    ${activeImageId === item.id ? "flex" : ""}
+    transition-all duration-300 z-10
+  `}
                         >
+                          {/* Tombol Zoom (tetap muncul semua level) */}
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -630,38 +659,51 @@ const AdminPekerjaanFisikListPage = () => {
                             <Fullscreen />
                           </button>
 
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleSetThumbnail(item.id_pekerjaan, item.id);
-                            }}
-                            className="bg-green-500 text-white p-2 rounded shadow hover:bg-green-600"
-                            title="Jadikan Thumbnail"
-                          >
-                            <GalleryThumbnails />
-                          </button>
+                          {/* pakai spread array untuk tombol lain */}
+                          {[
+                            ...(isLevel2
+                              ? [
+                                  <button
+                                    key="thumb"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleSetThumbnail(
+                                        item.id_pekerjaan,
+                                        item.id
+                                      );
+                                    }}
+                                    className="bg-green-500 text-white p-2 rounded shadow hover:bg-green-600"
+                                    title="Jadikan Thumbnail"
+                                  >
+                                    <GalleryThumbnails />
+                                  </button>,
 
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEditGambar(item.id);
-                            }}
-                            className="bg-blue-500 text-white p-2 rounded shadow hover:bg-blue-600"
-                            title="Edit Keterangan"
-                          >
-                            <PencilLine />
-                          </button>
+                                  <button
+                                    key="edit"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleEditGambar(item.id);
+                                    }}
+                                    className="bg-blue-500 text-white p-2 rounded shadow hover:bg-blue-600"
+                                    title="Edit Keterangan"
+                                  >
+                                    <PencilLine />
+                                  </button>,
 
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteGambar(item);
-                            }}
-                            className="bg-red-600 text-white p-2 rounded shadow hover:bg-red-700"
-                            title="Hapus Gambar"
-                          >
-                            <Trash2 />
-                          </button>
+                                  <button
+                                    key="delete"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteGambar(item);
+                                    }}
+                                    className="bg-red-600 text-white p-2 rounded shadow hover:bg-red-700"
+                                    title="Hapus Gambar"
+                                  >
+                                    <Trash2 />
+                                  </button>,
+                                ]
+                              : []),
+                          ]}
                         </div>
                       </div>
                     ))}

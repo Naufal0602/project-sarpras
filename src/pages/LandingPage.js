@@ -1,12 +1,13 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, getDocs, query, where, doc, getDoc } from "firebase/firestore";
 import { db } from "../services/firebase";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import { ChevronDown } from "lucide-react";
 import LoadingHalf from "../components/LoadingHalf";
+import { getAuth } from "firebase/auth";
 
 const LandingPage = () => {
   const [showModal, setShowModal] = useState(false);
@@ -19,6 +20,34 @@ const LandingPage = () => {
   const [slidesToShow, setSlidesToShow] = useState(1);
   const sliderRef = useRef(null);
   const navigate = useNavigate();
+  const auth = getAuth();
+  const [user, setUser] = useState(null);
+  const [role, setRole] = useState(null);
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, [auth]);
+
+  useEffect(() => {
+  const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
+    setUser(currentUser);
+
+    if (currentUser) {
+      // ambil role user dari Firestore
+      const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+      if (userDoc.exists()) {
+        setRole(userDoc.data().role);
+      }
+    } else {
+      setRole(null); // reset kalau logout
+    }
+  });
+
+  return () => unsubscribe();
+}, [auth]);
 
   useEffect(() => {
     const fetchYears = async () => {
@@ -38,7 +67,6 @@ const LandingPage = () => {
         // Urutkan tahun dari terbesar ke kecil
         const sortedYears = Array.from(yearSet).sort((a, b) => b - a);
         setAvailableYears(sortedYears);
-
       } catch (err) {
         console.error("Gagal fetch tahun:", err);
       }
@@ -74,7 +102,6 @@ const LandingPage = () => {
           );
           const snapshotGaleri = await getDocs(qGaleri);
 
-
           snapshotGaleri.forEach((docGaleri) => {
             galeriData.push({
               id: docGaleri.id,
@@ -90,17 +117,25 @@ const LandingPage = () => {
           });
         }
 
-        setGaleri(galeriData);
-      } catch (err) {
-        console.error("Gagal fetch data:", err);
-      } finally {
-        setLoading(false);
+        // 🔥 filter berdasarkan role
+      let filteredGaleri = galeriData;
+
+      if (user && role && role !== "admin") {
+        filteredGaleri = galeriData.filter(
+          (item) => item.pekerjaan?.bagian === role
+        );
       }
-    };
 
-    fetchData();
-  }, [selectedYear]);
+      setGaleri(filteredGaleri);
+    } catch (err) {
+      console.error("Gagal fetch data:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  fetchData();
+}, [selectedYear, user, role]); 
 
   // Atur jumlah slide awal sesuai lebar layar
   useEffect(() => {
@@ -109,7 +144,7 @@ const LandingPage = () => {
       if (window.innerWidth <= 480) setSlidesToShow(1);
       else if (window.innerWidth <= 768) setSlidesToShow(2);
       else if (window.innerWidth <= 1028) setSlidesToShow(3);
-      else if (window.innerWidth <= 1440) setSlidesToShow(3);
+      else if (window.innerWidth <= 1492) setSlidesToShow(3);
       else setSlidesToShow(1);
     };
     updateSlides(); // panggil sekali saat mount
@@ -118,22 +153,25 @@ const LandingPage = () => {
   }, []);
 
   // Memo biar settings gak bikin re-init slider
-  const settings = useMemo(() => ({
-    centerPadding: "60px",
-    dots: true,
-    infinite: true,
-    speed: 800,
-    slidesToShow,
-    slidesToScroll: 1,
-    autoplay: true,
-    autoplaySpeed: 3000,
-    responsive: [
-      { breakpoint: 1440, settings: { slidesToShow: 3 } },
-      { breakpoint: 1028, settings: { slidesToShow: 3 } },
-      { breakpoint: 768, settings: { slidesToShow: 2 } },
-      { breakpoint: 480, settings: { slidesToShow: 1 } },
-    ],
-  }), [slidesToShow]);
+  const settings = useMemo(
+    () => ({
+      centerPadding: "60px",
+      dots: true,
+      infinite: true,
+      speed: 800,
+      slidesToShow,
+      slidesToScroll: 1,
+      autoplay: true,
+      autoplaySpeed: 3000,
+      responsive: [
+        { breakpoint: 1492, settings: { slidesToShow: 3 } },
+        { breakpoint: 1028, settings: { slidesToShow: 3 } },
+        { breakpoint: 768, settings: { slidesToShow: 2 } },
+        { breakpoint: 480, settings: { slidesToShow: 1 } },
+      ],
+    }),
+    [slidesToShow]
+  );
 
   const handleImageClick = async (media) => {
     const matched = galeri.find((item) => item.image === media.image);
@@ -141,7 +179,7 @@ const LandingPage = () => {
 
     if (!pekerjaanId) return;
     setShowModal(true);
-  setIsFetchingPekerjaan(true);
+    setIsFetchingPekerjaan(true);
 
     try {
       const q = query(
@@ -158,8 +196,8 @@ const LandingPage = () => {
     } catch (err) {
       console.error("Gagal fetch galeri pekerjaan:", err);
     } finally {
-       setIsFetchingPekerjaan(false);
-  }
+      setIsFetchingPekerjaan(false);
+    }
   };
 
   return (
@@ -182,9 +220,8 @@ const LandingPage = () => {
           </div>
           <button
             className="border border-orange-500 text-black px-4 py-2 rounded hover:bg-orange-500 hover:text-white transition duration-200"
-            onClick={() => navigate("/login")}
-          >
-            Login
+            onClick={() => navigate("/login")}>
+            {user ? "Dashboard" : "Login"}
           </button>
         </div>
 
@@ -360,10 +397,10 @@ const LandingPage = () => {
             </div>
             {loading ? (
               <div className="mt-16">
-              <LoadingHalf/>
+                <LoadingHalf />
               </div>
             ) : (
-              <Slider  ref={sliderRef} {...settings}>
+              <Slider ref={sliderRef} {...settings}>
                 {galeri.map((media) => (
                   <div
                     key={media.id}
@@ -396,7 +433,9 @@ const LandingPage = () => {
             <div className="fixed inset-0 z-50 bg-black bg-opacity-60 flex items-center justify-center px-4">
               <div className="bg-white rounded-lg shadow-lg max-w-3xl w-full p-6 overflow-hidden max-h-[70vh] relative">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-3xl font-extrabold text-orange-400">Galeri Pekerjaan</h2>
+                  <h2 className="text-3xl font-extrabold text-orange-400">
+                    Galeri Pekerjaan
+                  </h2>
                   <button
                     onClick={() => setShowModal(false)}
                     className="text-gray-500 hover:text-red-500 text-xl font-bold"

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { auth, db } from "../../services/firebase";
-import { useNavigate } from "react-router-dom";
 import { doc, getDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import LogoutButton from "../../components/LogoutButton";
@@ -10,7 +9,6 @@ import { Link } from "react-router-dom";
 import Loading from "../../components/Loading";
 
 const UserProfile = () => {
-  const navigate = useNavigate();
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -107,12 +105,6 @@ const UserProfile = () => {
                 </p>
               </div>
               <div className="mt-6 justify-end flex space-x-4">
-                <button
-                  onClick={() => navigate(-1)}
-                  className="bg-orange-500 text-white px-6 py-3 rounded-lg hover:bg-orange-600 transition-colors font-medium"
-                >
-                  Kembali
-                </button>
                 <Link
                   to={`/user/edit-profile/${authUser.uid}`}
                   className="ml-4 bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors font-medium"

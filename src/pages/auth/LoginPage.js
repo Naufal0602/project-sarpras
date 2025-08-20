@@ -8,6 +8,7 @@ import { Link } from "react-router-dom";
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [Pesan, setPesan] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -55,13 +56,13 @@ const LoginPage = () => {
             navigate("/user/dashboard");
             break;
           default:
-            alert("Role tidak dikenali");
+            setPesan("Role tidak dikenali");
         }
       } else {
-        alert("Data user tidak ditemukan di Firestore.");
+        setPesan("User tidak ditemukan.");
       }
     } catch (error) {
-      alert("Login gagal: " + error.message);
+      setPesan("Login gagal. Periksa email dan password Anda.");
     }
   };
 
@@ -121,6 +122,11 @@ const LoginPage = () => {
           >
             Login
           </button>
+          {Pesan && (
+            <div className="text-red-500 text-sm mt-2">
+              {Pesan}
+            </div>
+          )}
         </form>
       </div>
     </div>

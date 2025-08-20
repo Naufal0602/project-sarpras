@@ -7,6 +7,7 @@ import LogoutButton from "../../components/LogoutButton";
 import AdminSidebar from "../../components/template/AdminSideBar";
 import AdminNavbar from "../../components/template/AdminNavBar";
 import Loading from "../../components/Loading";
+import { Link } from "react-router-dom";
 
 const UserProfile = () => {
   const navigate = useNavigate();
@@ -49,9 +50,9 @@ const UserProfile = () => {
     fetchUserData();
   }, [authUser]);
 
-   if (loading) {
-      return <Loading text="Loading..." />;
-    }
+  if (loading) {
+    return <Loading text="Loading..." />;
+  }
   if (error) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -120,6 +121,13 @@ const UserProfile = () => {
             >
               Edit Profil
             </button>
+            <Link
+              to="/admin/ganti-password"
+              className="ml-4 inline-block bg-red-600 text-white px-6 py-3 rounded-lg 
+             hover:bg-red-700 active:scale-95 transition-all duration-200 font-medium shadow-md"
+            >
+              Ganti Password
+            </Link>
           </div>
         </div>
       </div>

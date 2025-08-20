@@ -90,7 +90,7 @@ const EditProfilePage = () => {
                   <button
                     type="button"
                     onClick={() => navigate(-1)}
-                    className="bg-gray-400 text-white px-6 py-2 rounded hover:bg-gray-500"
+                    className="bg-orange-500 text-white px-6 py-2 rounded hover:bg-orange-600"
                   >
                     Kembali
                   </button>

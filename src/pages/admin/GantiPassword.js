@@ -1,16 +1,13 @@
 import React, { useState } from "react";
-import Sidebar from "../../components/template/SideBar";
-import Navbar from "../../components/template/Navbar";
+import Sidebar from "../../components/template/AdminSideBar";
+import Navbar from "../../components/template/AdminNavBar";
 import Loading from "../../components/Loading";
 import GantiPassword from "../../components/GantiPassword";
+
 export default function UbahPassword() {
 
   const [loading, setLoading] = useState(false);
 console.log(setLoading)
-  if (loading) {
-    return <Loading text="Memuat..." />;
-  }
-
   if (loading) {
     return <Loading text="Memuat..." />;
   }
@@ -22,7 +19,7 @@ console.log(setLoading)
         <Sidebar />
       </div>
       <div className="flex-1 lg:ml-64 pt-16 flex justify-center items-center">
-        <GantiPassword />
+        <GantiPassword/>
       </div>
     </div>
   );

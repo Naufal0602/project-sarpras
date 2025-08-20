@@ -28,6 +28,7 @@ const AdminPerusahaanListPage = () => {
   const [selectedStatus, setSelectedStatus] = useState("semua");
   const userData = JSON.parse(localStorage.getItem("user"));
   const isLevel2 = userData?.level === 2;
+  const isLevel1 = userData?.level === 1;
   const [exportScope, setExportScope] = useState("sebagian"); // default: sebagian
   const [showModalPekerjaan, setShowModalPekerjaan] = useState(false);
   const [selectedPerusahaan, setSelectedPerusahaan] = useState(null);
@@ -284,6 +285,27 @@ const AdminPerusahaanListPage = () => {
           "-"
         ),
     },
+     ...(isLevel1
+      ? [
+    {
+      name: "Aksi",
+      cell: (row) => (
+        <div className="flex flex-row sm:flex-col gap-1 py-2">
+          <div className="w-full">
+            <button
+              onClick={() => handleShowPekerjaanModal(row)}
+              className="group w-full bg-green-400 hover:bg-green-700 text-white px-3 py-1 rounded text-sm flex items-center justify-center transition-all duration-300"
+            >
+              <span>
+                <FileText className="w-4 h-4" />
+              </span>
+            </button>
+          </div>
+        </div>
+      ),
+    },
+      ]
+      : []),
     ...(isLevel2
       ? [
           {
@@ -310,7 +332,9 @@ const AdminPerusahaanListPage = () => {
                     onClick={() => handleShowPekerjaanModal(row)}
                     className="group w-full bg-green-400 hover:bg-green-700 text-white px-3 py-1 rounded text-sm flex items-center justify-center transition-all duration-300"
                   >
-                    <span><FileText className="w-4 h-4"/></span>
+                    <span>
+                      <FileText className="w-4 h-4" />
+                    </span>
                   </button>
                 </div>
               </div>

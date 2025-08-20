@@ -11,6 +11,7 @@ import EditUserPage from "../pages/admin/EditUserPage";
 import PendingUserPage from "../pages/admin/PendingUser";
 import AdminProfil from "../pages/admin/ProfilAdmin.js";
 import EditProfil from "../pages/admin/EditProfil.js";
+import AdminGantiPassword from "../pages/admin/GantiPassword.js";
 
 import UserDashboard from "../pages/user/dashboard.js";
 import UserProfil from "../pages/user/Profil.js";
@@ -52,6 +53,7 @@ const AppRouter = () => {
           <Route path="/admin/pending-users" element={<PendingUserPage />} />
           <Route path="/admin/ProfilAdmin" element={<AdminProfil />} />
           <Route path="/admin/ProfilAdmin/edit/:id" element={<EditProfil />} />
+          <Route path="/admin/ganti-password" element={<AdminGantiPassword />} />
         </Route>
 
         <Route element={<ProtectedRouteByRole allowedRole={["user-sd", "user-paud", "user-smp"]}/>}>

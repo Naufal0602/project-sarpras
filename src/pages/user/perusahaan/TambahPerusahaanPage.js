@@ -10,6 +10,7 @@ import L from "leaflet";
 import { useEffect } from "react";
 import "leaflet/dist/leaflet.css";
 import Loading from "../../../components/Loading";
+import SuccessFullScreen from "../../../components/Success";
 
 const TambahPerusahaanPage = () => {
   const [namaPerusahaan, setNamaPerusahaan] = useState("");
@@ -23,22 +24,21 @@ const TambahPerusahaanPage = () => {
   });
   const [fotoKantorFile, setFotoKantorFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
-
+  const [successToast, setSuccessToast] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-  
+
     try {
       // Upload foto ke Cloudinary
       const result = await uploadToCloudinary(fotoKantorFile);
-  
-      // Pastikan data Cloudinary punya public_id dan secure_url
+
       if (!result?.public_id || !result?.secure_url) {
         throw new Error("Gagal mengupload foto ke Cloudinary");
       }
-  
+
       // Simpan ke Firestore
       await addDoc(collection(db, "perusahaan"), {
         nama_perusahaan: namaPerusahaan,
@@ -54,13 +54,16 @@ const TambahPerusahaanPage = () => {
         created_at: serverTimestamp(),
         updated_at: serverTimestamp(),
       });
-  
-      alert("Data perusahaan berhasil ditambahkan.");
+
+      // Tampilkan toast sukses
+      setSuccessToast(true);
+
+      // Reset input
       setPreviewUrl(null);
       setFotoKantorFile(null);
-        setTimeout(() => {
-              navigate("/user/perusahaan");
-            }, 300);
+
+      // Arahkan ke halaman list setelah delay
+      setSuccessToast(true);
     } catch (error) {
       console.error("Gagal menambahkan perusahaan:", error);
       alert("Terjadi kesalahan. Silakan coba lagi.");
@@ -68,9 +71,6 @@ const TambahPerusahaanPage = () => {
       setLoading(false);
     }
   };
-  
-
-
 
   delete L.Icon.Default.prototype._getIconUrl;
   L.Icon.Default.mergeOptions({
@@ -106,6 +106,15 @@ const TambahPerusahaanPage = () => {
   }
   return (
     <>
+ 
+      <SuccessFullScreen
+      className="fixed inset-0 flex  z-50"
+        show={successToast}
+        message="Perusahaan berhasil ditambahkan!"
+        onDone={() => navigate("/user/perusahaan")}
+      />
+
+
       {loading && (
         <div className="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50">
           <Loading text="Mengupload" />
@@ -220,7 +229,7 @@ const TambahPerusahaanPage = () => {
                   center={[koordinat.lat, koordinat.lng]}
                   zoom={13}
                   scrollWheelZoom={false}
-                  style={{ height: "300px", width: "100%" }}
+                  style={{ height: "300px", width: "100%", zIndex: 0 }}
                   className="rounded"
                 >
                   <TileLayer
