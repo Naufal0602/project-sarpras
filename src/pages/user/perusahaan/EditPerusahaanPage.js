@@ -10,6 +10,7 @@ import { uploadToCloudinary } from "../../../services/cloudinaryService";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import axios from "axios";
+import SuccessFullScreen from "../../../components/Success";
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -35,6 +36,7 @@ const EditPerusahaanPage = () => {
   const [alamat, setAlamat] = useState("");
   const [status, setStatus] = useState("aktif");
   const [loading, setLoading] = useState(false);
+  const [successToast, setSuccessToast] = useState(false);
 
   const [latitude, setLatitude] = useState(-6.2);
   const [longitude, setLongitude] = useState(106.8);
@@ -88,7 +90,7 @@ const EditPerusahaanPage = () => {
           const docSnap = await getDoc(docRef);
           const data = docSnap.data();
           await axios.post("http://localhost:3001/api/cloudinary/", {
-            public_id: data.foto_kantor.public_id,
+            public_id: [data.foto_kantor.public_id],
           });
         } catch (e) {
           console.error("Gagal hapus foto lama:", e);
@@ -109,8 +111,7 @@ const EditPerusahaanPage = () => {
         updated_at: serverTimestamp(),
       });
 
-      alert("Data perusahaan berhasil diperbarui.");
-      navigate("/user/perusahaan"); // dimatikan dulu saat debugging
+      setSuccessToast(true);// dimatikan dulu saat debugging
     } catch (error) {
       console.error("Gagal memperbarui perusahaan:", error);
       alert("Terjadi kesalahan. Silakan coba lagi.");
@@ -120,6 +121,15 @@ const EditPerusahaanPage = () => {
   };
 
   return (
+    <>
+     
+      <SuccessFullScreen
+      className="fixed inset-0 flex  z-50"
+        show={successToast}
+        message="Perusahaan berhasil diedit!"
+        onDone={() => navigate("/user/perusahaan")}
+      />
+
     <div className="flex min-h-screen bg-gray-50">
       <div className="fixed">
         <AdminNavbar />
@@ -202,7 +212,7 @@ const EditPerusahaanPage = () => {
                   const file = e.target.files[0];
                   if (file) {
                     setFotoFile(file);
-                    setFotoKantor(URL.createObjectURL(file)); // update preview dengan foto baru
+                    setFotoKantor(URL.createObjectURL(file)); 
                   }
                 }}
                 className="w-full border px-4 py-2 rounded"
@@ -265,6 +275,7 @@ const EditPerusahaanPage = () => {
         ;
       </div>
     </div>
+        </>
   );
 };
 

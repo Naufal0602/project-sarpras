@@ -30,6 +30,7 @@ import autoTable from "jspdf-autotable";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Loading from "../../../components/Loading";
+import ConfirmModal from "../../../components/Modaldelete";
 
 const AdminPekerjaanFisikListPage = () => {
   const [pekerjaanList, setPekerjaanList] = useState([]);
@@ -48,6 +49,8 @@ const AdminPekerjaanFisikListPage = () => {
   const [zoomImageUrl, setZoomImageUrl] = useState(null);
   const navigate = useNavigate();
   const [activeImageId, setActiveImageId] = useState(null);
+  const [openModal, setOpenModal] = useState(false);
+  const [selectedPekerjaanId, setSelectedPekerjaanId] = useState(null);
 
   const bagianUser = role?.includes("user-")
     ? role.replace("user-", "")
@@ -313,20 +316,21 @@ const AdminPekerjaanFisikListPage = () => {
   };
 
   const handleDelete = async (id) => {
-    const confirm = window.confirm("Yakin ingin menghapus pekerjaan ini?");
-    if (!confirm) return;
     try {
       const galeriRef = collection(db, "galeri");
       const q = query(galeriRef, where("id_pekerjaan", "==", id));
       const querySnapshot = await getDocs(q);
 
       const publicIds = querySnapshot.docs.map((doc) => doc.data().public_id);
+      console.log("Public IDs to delete:", publicIds);
 
-      await axios.post("http://localhost:3001/api/cloudinary/", {
-        public_id: publicIds,
-      });
+      if (publicIds.length > 0) {
+        await axios.post("http://localhost:3001/api/cloudinary/", {
+          public_id: publicIds,
+        });
+      }
 
-      await deleteDoc(doc(db, "pekerjaan", id));
+      await deleteDoc(doc(db, "pekerjaan_fisik", id));
       setPekerjaanList((prev) => prev.filter((item) => item.id !== id));
       alert("Pekerjaan berhasil dihapus.");
     } catch (error) {
@@ -433,27 +437,27 @@ const AdminPekerjaanFisikListPage = () => {
     },
     ...(isLevel1
       ? [
-    {
-      name: "Aksi",
-      cell: (row) => (
-        <div className="flex  sm:flex-col gap-2">
-          <div>
-            <button
-              onClick={() => openGaleriModal(row.id, row.jenis_pekerjaan)}
-              className="group bg-green-500 hover:bg-green-700 w-full text-white px-3 py-1 rounded text-sm flex items-center justify-center transition-all duration-300"
-            >
-              <span className="lg:group-hover:hidden ">
-                <GalleryHorizontal className="w-4 h-4" />
-              </span>
-              <span className="hidden lg:group-hover:inline group-hover:hidden ">
-                Galeri
-              </span>
-            </button>
-          </div>
-        </div>
-      ),
-    },
-     ]
+          {
+            name: "Aksi",
+            cell: (row) => (
+              <div className="flex  sm:flex-col gap-2">
+                <div>
+                  <button
+                    onClick={() => openGaleriModal(row.id, row.jenis_pekerjaan)}
+                    className="group bg-green-500 hover:bg-green-700 w-full text-white px-3 py-1 rounded text-sm flex items-center justify-center transition-all duration-300"
+                  >
+                    <span className="lg:group-hover:hidden ">
+                      <GalleryHorizontal className="w-4 h-4" />
+                    </span>
+                    <span className="hidden lg:group-hover:inline group-hover:hidden ">
+                      Galeri
+                    </span>
+                  </button>
+                </div>
+              </div>
+            ),
+          },
+        ]
       : []),
     ...(isLevel2
       ? [
@@ -471,9 +475,11 @@ const AdminPekerjaanFisikListPage = () => {
                     </span>
                     <span className="hidden lg:group-hover:inline">Ubah</span>
                   </Link>
-
                   <button
-                    onClick={() => handleDelete(row.id)}
+                    onClick={() => {
+                      setSelectedPekerjaanId(row.id);
+                      setOpenModal(true);
+                    }}
                     className="group bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm flex items-center justify-center transition-all duration-300"
                   >
                     <span className="lg:group-hover:hidden">
@@ -565,6 +571,19 @@ const AdminPekerjaanFisikListPage = () => {
           noDataComponent="Belum ada data pekerjaan fisik"
         />
       </div>
+
+      <ConfirmModal
+      title="Hapus Pekerjaan"
+      message="Yakin ingin menghapus pekerjaan ini? Semua data terkait akan dihapus."
+        open={openModal}
+        onClose={() => setOpenModal(false)}
+        onConfirm={() => {
+          if (selectedPekerjaanId) {
+            handleDelete(selectedPekerjaanId);
+            setOpenModal(false);
+          }
+        }}
+      />
 
       {showModal && (
         <div className="fixed inset-0 z-50 bg-black bg-opacity-60 flex items-center justify-center px-4">

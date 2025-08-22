@@ -14,7 +14,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../../../components/template/Navbar";
 import Sidebar from "../../../components/template/SideBar";
 import Loading from "../../../components/Loading";
-
+import SuccessFullScreen from "../../../components/Success";
 const EditPekerjaanFisikPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -25,6 +25,7 @@ const EditPekerjaanFisikPage = () => {
   const [deskripsi, setDeskripsi] = useState("");
   const [loading, setLoading] = useState(false);
   const [perusahaanOptions, setPerusahaanOptions] = useState([]);
+  const [successToast, setSuccessToast] = useState(false);
 
   useEffect(() => {
     const fetchPerusahaan = async () => {
@@ -88,8 +89,7 @@ const EditPekerjaanFisikPage = () => {
         updated_at: serverTimestamp(),
       });
 
-      alert("Data berhasil diperbarui.");
-      navigate("/user/pekerjaan-fisik");
+      setSuccessToast(true);
     } catch (error) {
       console.error("Gagal memperbarui data:", error);
       alert("Terjadi kesalahan saat menyimpan data.");
@@ -103,6 +103,14 @@ const EditPekerjaanFisikPage = () => {
   }
 
   return (
+    <>
+       <SuccessFullScreen
+              className="fixed inset-0 flex  z-50"
+              show={successToast}
+              message="Pekerjaan fisik berhasil diedit!"
+              onDone={() => navigate("/user/pekerjaan-fisik")}
+            />
+    
     <div className="flex min-h-screen bg-gray-50">
       <div className="fixed">
         <Navbar />
@@ -194,6 +202,7 @@ const EditPekerjaanFisikPage = () => {
         </form>
       </div>
     </div>
+    </>
   );
 };
 

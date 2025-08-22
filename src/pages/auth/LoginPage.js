@@ -62,6 +62,7 @@ const LoginPage = () => {
         setPesan("User tidak ditemukan.");
       }
     } catch (error) {
+      console.log(error);
       setPesan("Login gagal. Periksa email dan password Anda.");
     }
   };

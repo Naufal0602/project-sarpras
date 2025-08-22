@@ -17,6 +17,7 @@ import UserDashboard from "../pages/user/dashboard.js";
 import UserProfil from "../pages/user/Profil.js";
 import UserEditProfil from "../pages/user/EditProfilUser.js";
 import GantiPassword from "../pages/user/GantiPassword.js";
+import Galeri from "../pages/user/Galeri.js";
 
 import UserPerusahaan from "../pages/user/perusahaan/index.js";
 import UserTambahPerusahaan from "../pages/user/perusahaan/TambahPerusahaanPage.js";
@@ -64,6 +65,7 @@ const AppRouter = () => {
           <Route path="/user/perusahaan" element={<UserPerusahaan />} />
           <Route path="/user/perusahaan/tambah" element={<UserTambahPerusahaan />} />
           <Route path="/user/perusahaan/edit/:id" element={<UserEditPerusahaan />} />
+          <Route path="/user/galeri" element={<Galeri />} />
 
           <Route path="/user/pekerjaan-fisik" element={<UserPekerjaanFisik />} />
           <Route path="/user/pekerjaan-fisik/tambah" element={<TambahPekerjaanFisikPage />} />

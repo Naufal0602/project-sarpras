@@ -5,6 +5,7 @@ import { doc, getDoc, updateDoc } from "firebase/firestore";
 import Navbar from "../../components/template/Navbar";
 import Sidebar from "../../components/template/SideBar";
 import Loading from "../../components/Loading";
+import SuccessFullScreen from "../../components/Success";
 const EditProfilePage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -12,6 +13,7 @@ const EditProfilePage = () => {
   const [nama, setNama] = useState("");
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
+  const [successToast, setSuccessToast] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -46,7 +48,8 @@ const EditProfilePage = () => {
       await updateDoc(doc(db, "users", id), {
         nama: nama,
       });
-      navigate('/user/profil');
+      setSuccessToast(true);
+      setMessage("Nama berhasil diperbarui!");
     } catch (error) {
       console.error("Gagal memperbarui nama:", error);
       setMessage("Gagal memperbarui nama: " + error.message);
@@ -58,6 +61,15 @@ const EditProfilePage = () => {
   }
 
   return (
+    <>
+        <SuccessFullScreen
+        className="fixed inset-0 flex  z-50"
+        show={successToast}
+        message="Perusahaan berhasil diedit!"
+        onDone={() => navigate("/user/profil")}
+      />
+
+   
     <div className="flex min-h-screen">
       <div className="fixed">
         <Navbar />
@@ -107,6 +119,7 @@ const EditProfilePage = () => {
         </div>
       </div>
     </div>
+     </>
   );
 };
 

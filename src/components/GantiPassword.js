@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { getAuth, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
 import Loading from "../components/Loading";
 import { useNavigate } from "react-router-dom";
+import SuccessFullScreen from "../components/Success";
 
 const GantiPassword = () => {
   const [passwordLama, setPasswordLama] = useState("");
@@ -10,6 +11,7 @@ const GantiPassword = () => {
   const [pesan, setPesan] = useState("");
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [successToast, setSuccessToast] = useState(false);
 
   const handleGantiPassword = async () => {
     const auth = getAuth();
@@ -34,7 +36,7 @@ const GantiPassword = () => {
 
       // Update password
       await updatePassword(user, passwordBaru);
-      setPesan("✅ Password berhasil diubah!");
+      setSuccessToast(true);
       setPasswordLama("");
       setPasswordBaru("");
       setKonfirmasiPassword("");
@@ -57,7 +59,14 @@ const GantiPassword = () => {
   }
 
   return (
-
+      <>
+           <SuccessFullScreen
+              className="fixed inset-0 flex  z-50"
+              show={successToast}
+              message="Password berhasil di ubah!"
+              onDone={() => navigate("/login")}
+            />
+     
         <div className="p-6 lg:p-10 w-full max-w-md">
           <div className="bg-white shadow-2xl p-8 rounded-xl w-full flex flex-col gap-5">
             <h3 className="font-bold text-2xl text-center text-gray-700 mb-4">Ubah Password</h3>
@@ -107,7 +116,7 @@ const GantiPassword = () => {
             </div>
           </div>
         </div>
-
+ </>
   );
 }
 

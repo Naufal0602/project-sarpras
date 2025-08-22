@@ -46,6 +46,11 @@ const Sidebar = () => {
       icon: BicepsFlexed,
       to: "/user/pekerjaan-fisik",
     },
+    {
+      name: "Galeri",
+      icon: BicepsFlexed,
+      to: "/user/Galeri",
+    },
   ];
 
   const toggleSidebar = () => {

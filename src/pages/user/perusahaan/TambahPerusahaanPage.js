@@ -55,9 +55,6 @@ const TambahPerusahaanPage = () => {
         updated_at: serverTimestamp(),
       });
 
-      // Tampilkan toast sukses
-      setSuccessToast(true);
-
       // Reset input
       setPreviewUrl(null);
       setFotoKantorFile(null);

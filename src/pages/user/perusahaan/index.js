@@ -20,6 +20,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import Loading from "../../../components/Loading.js";
 import axios from "axios";
+import ConfirmModal from "../../../components/Modaldelete.js";
 
 const AdminPerusahaanListPage = () => {
   const [perusahaanList, setPerusahaanList] = useState([]);
@@ -32,6 +33,8 @@ const AdminPerusahaanListPage = () => {
   const [exportScope, setExportScope] = useState("sebagian"); // default: sebagian
   const [showModalPekerjaan, setShowModalPekerjaan] = useState(false);
   const [selectedPerusahaan, setSelectedPerusahaan] = useState(null);
+  const [openModal, setOpenModal] = useState(false);
+  const [selectedPerusahaanId, setSelectedPerusahaanId] = useState(null);
 
   const handleShowPekerjaanModal = (perusahaan) => {
     setSelectedPerusahaan(perusahaan);
@@ -71,29 +74,36 @@ const AdminPerusahaanListPage = () => {
   }, []);
 
   const handleDeletePerusahaan = async (perusahaanId) => {
-    const confirmDelete = window.confirm(
-      "Yakin ingin menghapus perusahaan ini?"
-    );
-    if (!confirmDelete) return;
-
     try {
-      try {
-        const docRef = doc(db, "perusahaan", perusahaanId);
-        const docSnap = await getDoc(docRef);
+      const docRef = doc(db, "perusahaan", perusahaanId);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
         const data = docSnap.data();
-        await axios.post("http://localhost:3001/api/cloudinary/", {
-          public_id: data.foto_kantor.public_id,
-        });
-      } catch (e) {
-        console.error("Gagal:", e);
+        if (data.foto_kantor?.public_id) {
+          const res = await axios.post(
+            "http://localhost:3001/api/cloudinary/",
+            {
+              public_id: [data.foto_kantor.public_id],
+            }
+          );
+          console.log("✅ Respons hapus Cloudinary:", res.data);
+        } else {
+          console.warn("⚠️ Tidak ada foto_kantor.public_id di data");
+        }
+      } else {
+        console.warn("⚠️ Dokumen tidak ditemukan:", perusahaanId);
       }
-      await deleteDoc(doc(db, "perusahaan", perusahaanId));
+
+      await deleteDoc(docRef);
+
       setPerusahaanList((prev) =>
         prev.filter((perusahaan) => perusahaan.id !== perusahaanId)
       );
+
       alert("Perusahaan berhasil dihapus.");
     } catch (error) {
-      console.error("Gagal menghapus perusahaan:", error);
+      console.error("❌ Gagal menghapus perusahaan:", error);
       alert("Gagal menghapus perusahaan.");
     }
   };
@@ -285,26 +295,26 @@ const AdminPerusahaanListPage = () => {
           "-"
         ),
     },
-     ...(isLevel1
+    ...(isLevel1
       ? [
-    {
-      name: "Aksi",
-      cell: (row) => (
-        <div className="flex flex-row sm:flex-col gap-1 py-2">
-          <div className="w-full">
-            <button
-              onClick={() => handleShowPekerjaanModal(row)}
-              className="group w-full bg-green-400 hover:bg-green-700 text-white px-3 py-1 rounded text-sm flex items-center justify-center transition-all duration-300"
-            >
-              <span>
-                <FileText className="w-4 h-4" />
-              </span>
-            </button>
-          </div>
-        </div>
-      ),
-    },
-      ]
+          {
+            name: "Aksi",
+            cell: (row) => (
+              <div className="flex flex-row sm:flex-col gap-1 py-2">
+                <div className="w-full">
+                  <button
+                    onClick={() => handleShowPekerjaanModal(row)}
+                    className="group w-full bg-green-400 hover:bg-green-700 text-white px-3 py-1 rounded text-sm flex items-center justify-center transition-all duration-300"
+                  >
+                    <span>
+                      <FileText className="w-4 h-4" />
+                    </span>
+                  </button>
+                </div>
+              </div>
+            ),
+          },
+        ]
       : []),
     ...(isLevel2
       ? [
@@ -321,7 +331,10 @@ const AdminPerusahaanListPage = () => {
                   </Link>
 
                   <button
-                    onClick={() => handleDeletePerusahaan(row.id)}
+                    onClick={() => {
+                      setSelectedPerusahaanId(row.id);
+                      setOpenModal(true);
+                    }}
                     className="group bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm flex items-center justify-center transition-all duration-300"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -499,6 +512,17 @@ const AdminPerusahaanListPage = () => {
             </div>
           </div>
         )}
+
+        <ConfirmModal
+          open={openModal}
+          onClose={() => setOpenModal(false)}
+          onConfirm={() => {
+            if (selectedPerusahaanId) {
+              handleDeletePerusahaan(selectedPerusahaanId);
+              setOpenModal(false); // tutup modal setelah konfirmasi
+            }
+          }}
+        />
 
         {showExportModal && (
           <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">

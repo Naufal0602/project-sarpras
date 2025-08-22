@@ -16,6 +16,7 @@ import Navbar from "../../../components/template/Navbar";
 import Sidebar from "../../../components/template/SideBar";
 import Loading from "../../../components/Loading";
 import { getAuth } from "firebase/auth";
+import SuccessFullScreen from "../../../components/Success";
 
 export default function TambahPekerjaanFisikDanUpload() {
   const [perusahaanId, setPerusahaanId] = useState("");
@@ -24,6 +25,7 @@ export default function TambahPekerjaanFisikDanUpload() {
   const [deskripsi, setDeskripsi] = useState("");
   const [bagian, setBagian] = useState("");
   const [perusahaanOptions, setPerusahaanOptions] = useState([]);
+  const [successToast, setSuccessToast] = useState(false);
 
   const [files, setFiles] = useState([]);
   const [previewUrls, setPreviewUrls] = useState([]);
@@ -116,14 +118,12 @@ export default function TambahPekerjaanFisikDanUpload() {
 
         if (!hasThumbnail) hasThumbnail = true;
       }
-
-      alert("Pekerjaan fisik & gambar berhasil ditambahkan!");
-      navigate("/user/pekerjaan-fisik");
     } catch (err) {
       console.error("Gagal menyimpan:", err);
       alert("Terjadi kesalahan saat menyimpan.");
     } finally {
       setLoading(false);
+      setSuccessToast(true);
     }
   };
 
@@ -132,123 +132,134 @@ export default function TambahPekerjaanFisikDanUpload() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <div className="fixed z-50">
-        <Navbar />
-        <Sidebar />
-      </div>
+    <>
+      <SuccessFullScreen
+        className="fixed inset-0 flex  z-50"
+        show={successToast}
+        message="Pekerjaan fisik berhasil ditambahkan!"
+        onDone={() => navigate("/user/pekerjaan-fisik")}
+      />
 
-      <div className="flex flex-col items-center justify-start md:ml-72 pt-20 p-8 w-full">
-        <form
-          onSubmit={handleSubmit}
-          className="bg-white shadow-lg p-6 rounded-lg w-full max-w-2xl"
-        >
-          <h2 className="text-2xl text-center font-bold mb-6 text-orange-600">
-            Tambah Pekerjaan Fisik & Upload Gambar
-          </h2>
+      <div className="flex min-h-screen bg-gray-50">
+        <div className="fixed">
+          <Navbar />
+          <Sidebar />
+        </div>
 
-          {/* --- FORM PEKERJAAN --- */}
-          <label className="block mb-3">
-            <span className="font-medium">Perusahaan</span>
-            <select
-              value={perusahaanId}
-              onChange={(e) => setPerusahaanId(e.target.value)}
-              className="w-full border px-3 py-2 rounded"
-              required
-            >
-              {perusahaanOptions.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.nama}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="block mb-3">
-            <span className="font-medium">Jenis Pekerjaan</span>
-            <input
-              type="text"
-              value={jenisPekerjaan}
-              onChange={(e) => setJenisPekerjaan(e.target.value)}
-              className="w-full border px-3 py-2 rounded"
-              required
-            />
-          </label>
-
-          <label className="block mb-3">
-            <span className="font-medium">Sekolah</span>
-            <input
-              type="text"
-              value={sekolah}
-              onChange={(e) => setSekolah(e.target.value)}
-              className="w-full border px-3 py-2 rounded"
-              required
-            />
-          </label>
-
-          <label className="block mb-3">
-            <span className="font-medium">Deskripsi</span>
-            <textarea
-              value={deskripsi}
-              onChange={(e) => setDeskripsi(e.target.value)}
-              className="w-full border px-3 py-2 rounded"
-              rows="3"
-              required
-            />
-          </label>
-
-          {/* --- UPLOAD GAMBAR --- */}
-          <label className="block mb-3">
-            <span className="font-medium">Pilih Gambar</span>
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={(e) => {
-                const selected = Array.from(e.target.files);
-                setFiles(selected);
-                setPreviewUrls(selected.map((f) => URL.createObjectURL(f)));
-              }}
-              className="mt-1 block w-full border rounded px-2 py-1"
-            />
-          </label>
-
-          {previewUrls.length > 0 && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4">
-              {previewUrls.map((url, idx) => (
-                <div key={idx} className="border rounded overflow-hidden">
-                  <img
-                    src={url}
-                    alt={`Preview ${idx}`}
-                    className="w-full h-28 object-cover"
-                  />
-                  <p className="text-xs text-center p-1 truncate">
-                    {files[idx]?.name}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <label className="block mb-4">
-            <span className="font-medium">Keterangan (untuk semua gambar)</span>
-            <input
-              type="text"
-              value={keterangan}
-              onChange={(e) => setKeterangan(e.target.value)}
-              className="w-full border px-3 py-2 rounded"
-            />
-          </label>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 rounded"
+        <div className="flex flex-col items-center justify-start md:ml-72 pt-20 p-8 w-full">
+          <form
+            onSubmit={handleSubmit}
+            className="bg-white shadow-lg p-6 rounded-lg w-full max-w-2xl"
           >
-            Simpan & Upload
-          </button>
-        </form>
+            <h2 className="text-2xl text-center font-bold mb-6 text-orange-600">
+              Tambah Pekerjaan Fisik & Upload Gambar
+            </h2>
+
+            {/* --- FORM PEKERJAAN --- */}
+            <label className="block mb-3">
+              <span className="font-medium">Perusahaan</span>
+              <select
+                value={perusahaanId}
+                onChange={(e) => setPerusahaanId(e.target.value)}
+                className="w-full border px-3 py-2 rounded"
+                required
+              >
+                {perusahaanOptions.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.nama}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="block mb-3">
+              <span className="font-medium">Jenis Pekerjaan</span>
+              <input
+                type="text"
+                value={jenisPekerjaan}
+                onChange={(e) => setJenisPekerjaan(e.target.value)}
+                className="w-full border px-3 py-2 rounded"
+                required
+              />
+            </label>
+
+            <label className="block mb-3">
+              <span className="font-medium">Sekolah</span>
+              <input
+                type="text"
+                value={sekolah}
+                onChange={(e) => setSekolah(e.target.value)}
+                className="w-full border px-3 py-2 rounded"
+                required
+              />
+            </label>
+
+            <label className="block mb-3">
+              <span className="font-medium">Deskripsi</span>
+              <textarea
+                value={deskripsi}
+                onChange={(e) => setDeskripsi(e.target.value)}
+                className="w-full border px-3 py-2 rounded"
+                rows="3"
+                required
+              />
+            </label>
+
+            {/* --- UPLOAD GAMBAR --- */}
+            <label className="block mb-3">
+              <span className="font-medium">Pilih Gambar</span>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => {
+                  const selected = Array.from(e.target.files);
+                  setFiles(selected);
+                  setPreviewUrls(selected.map((f) => URL.createObjectURL(f)));
+                }}
+                className="mt-1 block w-full border rounded px-2 py-1"
+              />
+            </label>
+
+            {previewUrls.length > 0 && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4">
+                {previewUrls.map((url, idx) => (
+                  <div key={idx} className="border rounded overflow-hidden">
+                    <img
+                      src={url}
+                      alt={`Preview ${idx}`}
+                      className="w-full h-28 object-cover"
+                    />
+                    <p className="text-xs text-center p-1 truncate">
+                      {files[idx]?.name}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <label className="block mb-4">
+              <span className="font-medium">
+                Keterangan (untuk semua gambar)
+              </span>
+              <input
+                type="text"
+                value={keterangan}
+                onChange={(e) => setKeterangan(e.target.value)}
+                className="w-full border px-3 py-2 rounded"
+              />
+            </label>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 rounded"
+            >
+              Simpan & Upload
+            </button>
+          </form>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
