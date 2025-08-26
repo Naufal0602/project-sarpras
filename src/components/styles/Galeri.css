@@ -37,11 +37,45 @@ h1 {
 }
 
 .gallery figure {
+  position: relative;
   container: figure / inline-size;
   overflow: hidden;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr);
+}
+
+.gallery .overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 2;
+}
+
+.gallery figure:hover .overlay {
+  opacity: 1;
+}
+
+.gallery .overlay .btn {
+  background: white;
+  color: black;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  border: none;
+  transition: background 0.2s;
+}
+
+.gallery .overlay .btn:hover {
+  background: #f3f3f3;
 }
 
 .gallery img {

@@ -53,7 +53,7 @@ const GaleriDashboard = ({ role }) => {
     fetchPhotos();
   }, [role]);
 
-  const placeholders = Array.from({ length: 12 }, (_, i) => i);
+  const placeholders = Array.from({ length: 10 }, (_, i) => i);
   const bagianUser = roleToBagian[role];
 
   return (

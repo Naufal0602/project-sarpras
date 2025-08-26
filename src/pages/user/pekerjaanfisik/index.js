@@ -658,13 +658,13 @@ const AdminPekerjaanFisikListPage = () => {
 
                         <div
                           className={`
-    absolute top-0 left-0 w-full h-full
-    bg-black bg-opacity-40 backdrop-blur-sm
-    items-center justify-center gap-2
-    hidden group-hover:flex
-    ${activeImageId === item.id ? "flex" : ""}
-    transition-all duration-300 z-10
-  `}
+                                absolute top-0 left-0 w-full h-full
+                                bg-black bg-opacity-40 backdrop-blur-sm
+                                items-center justify-center gap-2
+                                hidden group-hover:flex
+                                ${activeImageId === item.id ? "flex" : ""}
+                                transition-all duration-300 z-10
+                              `}
                         >
                           {/* Tombol Zoom (tetap muncul semua level) */}
                           <button
