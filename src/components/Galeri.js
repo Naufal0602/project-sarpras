@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { collection, getDocs, doc, getDoc, query, where, limit } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc, query, where} from "firebase/firestore";
 import { db } from "../services/firebase";
-import { X } from "lucide-react"; // buat close modal
+import { X, Fullscreen } from "lucide-react"; // buat close modal
 import "./styles/Galeri.css";
 
 const roleToBagian = {
@@ -20,7 +20,7 @@ const Galeri = ({ role }) => {
       try {
         // ✅ hanya ambil galeri dengan thumbnail = true
         const galeriRef = collection(db, "galeri");
-        const galeriQuery = query(galeriRef, where("thumbnail", "==", true), limit(10));
+        const galeriQuery = query(galeriRef, where("thumbnail", "==", true));
         const galeriSnap = await getDocs(galeriQuery);
 
         const galeriData = galeriSnap.docs.map((doc) => ({
@@ -56,7 +56,7 @@ const Galeri = ({ role }) => {
     fetchPhotos();
   }, [role]);
 
-  const placeholders = Array.from({ length: 12 }, (_, i) => i);
+  const placeholders = Array.from({ length: 10 }, (_, i) => i);
   const bagianUser = roleToBagian[role];
 
   return (
@@ -75,7 +75,7 @@ const Galeri = ({ role }) => {
                 className="bg-gray-200 animate-pulse h-48 rounded-lg"
               />
             ))
-          : photos.map((photo) => (
+          : photos.slice(0, 10).map((photo) => (
               <figure
                 key={photo.id}
                 className="relative group rounded-lg overflow-hidden shadow"
@@ -98,15 +98,7 @@ const Galeri = ({ role }) => {
                     }}
                     className="bg-white px-3 py-1 rounded shadow hover:bg-gray-100"
                   >
-                    🔍 Zoom
-                  </button>
-                  <button
-                    className="bg-white px-3 py-1 rounded shadow hover:bg-gray-100"
-                    onClick={() =>
-                      (window.location.href = `/pekerjaan/${photo.id_pekerjaan}`)
-                    }
-                  >
-                    📂 Detail
+                    <Fullscreen size={30} />
                   </button>
                 </div>
               </figure>

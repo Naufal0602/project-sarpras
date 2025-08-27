@@ -5,6 +5,8 @@ import { db } from "../../services/firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import AdminNavbar from "../../components/template/AdminNavBar";
 import AdminSidebar from "../../components/template/AdminSideBar";
+import SuccessFullScreen from "../../components/Success";
+import Loading from "../../components/Loading";
 
 const EditUserPage = () => {
   const { id } = useParams(); // id = UID user
@@ -12,6 +14,8 @@ const EditUserPage = () => {
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("");
   const [level, setLevel] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [successToast, setSuccessToast] = useState(false);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -22,6 +26,7 @@ const EditUserPage = () => {
         setEmail(data.email);
         setRole(data.role);
         setLevel(data.level || 1);
+        setLoading(false);
       }
     };
     fetchUser();
@@ -35,12 +40,15 @@ const EditUserPage = () => {
         role,
         level: parseInt(level, 10),
       });
-      alert("Data pengguna berhasil diperbarui");
-      navigate("/admin/users");
+      setSuccessToast("Data Berhasil Diupdate");
     } catch (err) {
       alert("Gagal memperbarui pengguna: " + err.message);
     }
   };
+
+  if (loading) {
+    return <Loading text="Memuat..." />;
+  }
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-gray-100">
@@ -48,6 +56,12 @@ const EditUserPage = () => {
       <div className="fixed z-50">
         <AdminNavbar username="Admin" />
         <AdminSidebar />
+        <SuccessFullScreen
+          className="fixed inset-0 flex  z-50"
+          show={successToast}
+          message={successToast || ""}
+          onDone={() => navigate("/admin/users")}
+        />
       </div>
 
       {/* Konten Utama */}

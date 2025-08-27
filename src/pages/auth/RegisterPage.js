@@ -4,6 +4,8 @@ import { doc, setDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import emailjs from "@emailjs/browser";
 import ReCAPTCHA from "react-google-recaptcha";
+import Loading from "../../components/Loading";
+import SuccessFullScreen from "../../components/Success";
 
 function RegisterPage() {
   const [nama, setNama] = useState("");
@@ -12,24 +14,31 @@ function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [role, setRole] = useState("user-sd");
   const [captchaVerified, setCaptchaVerified] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [successToast, setSuccessToast] = useState(false);
+  const [pesan, setPesan] = useState("");
   const navigate = useNavigate();
+  
 
   const handleRegister = async (e) => {
     e.preventDefault();
 
+
     if (password !== confirmPassword) {
-      alert("Password dan konfirmasi password tidak sama.");
+      setPesan("Password dan Konfirmasi Password tidak sesuai.");
       return;
     }
 
     if (!captchaVerified) {
-      alert("Silakan centang captcha terlebih dahulu.");
+      setPesan("Silakan verifikasi CAPTCHA.");
       return;
     }
 
     const tempId = crypto.randomUUID();
 
     try {
+      setLoading(true);
+
       await setDoc(doc(db, "pending_users", tempId), {
         nama,
         email,
@@ -53,16 +62,16 @@ function RegisterPage() {
         },
         "TNa873KoLNwnqtnCa"
       );
-
-      alert("Email konfirmasi telah dikirim ke admin.");
-      navigate("/login");
+      setSuccessToast(true);
     } catch (error) {
-      console.error("Gagal mengirim email:", error);
-      alert("Error: " + error.message);
+      console.error("Gagal mendaftar:", error);
+      setPesan("Gagal mendaftar. Silakan coba lagi.");
+      setSuccessToast(false)
     }
   };
 
   return (
+    <>
       <div className="bg-[url('/bg.png')] bg-cover bg-center bg-no-repeat p-20 w-full h-full items-center justify-center">
         <div className="bg-gray-50 max-w-md mx-auto bg-white rounded-xl p-4 shadow-lg overflow-hidden mt-4">
           <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-6 text-center rounded-lg">
@@ -134,6 +143,8 @@ function RegisterPage() {
                 />
               </div>
 
+              {pesan && <p className="text-red-500 text-sm text-center">{pesan}</p>}
+
               <button
                 type="submit"
                 disabled={!captchaVerified}
@@ -149,6 +160,13 @@ function RegisterPage() {
           </div>
         </div>
        </div> 
+       {loading && <Loading text="Memproses Pendaftaran..." />}
+      <SuccessFullScreen
+        className="fixed inset-0 flex  z-50"
+        show={successToast}
+        message="Pendaftaran Berhasil! Silakan Cek Email Anda."
+        onDone={() => navigate("/login")}/>
+       </>
   );
 }
 

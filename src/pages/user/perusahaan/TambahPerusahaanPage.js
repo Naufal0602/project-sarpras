@@ -189,7 +189,7 @@ const TambahPerusahaanPage = () => {
 
             <div className="mb-4">
               <label className="block font-medium text-gray-700 mb-1">
-                Direktur
+                Foto Kantor
               </label>
               <input
                 type="file"

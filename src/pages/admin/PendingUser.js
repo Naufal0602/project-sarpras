@@ -4,11 +4,13 @@ import { db } from "../../services/firebase";
 import ModalProsesUser from "../../components/modal/ModalProsesUser";
 import AdminNavbar from "../../components/template/AdminNavBar";
 import AdminSidebar from "../../components/template/AdminSideBar";
+import SuccesFullScreen from "../../components/Success.js";
 
 const PendingUserListPage = () => {
   const [pendingUsers, setPendingUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [succesToast, setSuccessToast] = useState(false);
 
   const fetchPendingUsers = async () => {
     try {
@@ -94,7 +96,19 @@ const PendingUserListPage = () => {
 
         {/* Modal */}
         {showModal && selectedUser && (
-          <ModalProsesUser user={selectedUser} onClose={closeModal} />
+          <ModalProsesUser
+            user={selectedUser}
+            onClose={closeModal}
+            onSuccess={() => setSuccessToast(true)}
+          />
+        )}
+
+        {succesToast && (
+          <SuccesFullScreen
+            show={succesToast}
+            message="Data berhasil diproses"
+            onDone={() => setSuccessToast(false)} // reset biar bisa muncul lagi
+          />
         )}
       </div>
     </div>

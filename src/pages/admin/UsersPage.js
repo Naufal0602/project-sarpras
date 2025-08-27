@@ -19,6 +19,9 @@ import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import { PencilLine, Trash2 } from "lucide-react";
+import SuccessFullScreen from "../../components/Success";
+import Loading from "../../components/Loading";
+import ConfirmModal from "../../components/Modaldelete";
 
 const roleOptions = ["admin", "user-sd", "user-paud", "user-smp"];
 const levelOptions = [1, 2];
@@ -37,6 +40,9 @@ const AdminUserListPage = () => {
   const [selectedLevels, setSelectedLevels] = useState([]);
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const [selectedYear, setSelectedYear] = useState(currentYear);
+  const [successToast, setSuccessToast] = useState(false);
+  const [openModal, setOpenModal] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState(null);
 
   const fetchUsers = async () => {
     try {
@@ -63,6 +69,7 @@ const AdminUserListPage = () => {
 
   const handleRoleChange = async (userId, newRole) => {
     try {
+      setLoading(true);
       setUpdatingId(userId);
       await updateDoc(doc(db, "users", userId), { role: newRole });
       setUsers((prev) =>
@@ -74,11 +81,14 @@ const AdminUserListPage = () => {
       alert("Gagal update role");
     } finally {
       setUpdatingId(null);
+      setLoading(false);
+      setSuccessToast("Role Pengguna Berhasil di ganti");
     }
   };
 
   const handleLevelChange = async (userId, newLevel) => {
     try {
+      setLoading(true);
       setUpdatingId(userId);
       await updateDoc(doc(db, "users", userId), { level: parseInt(newLevel) });
       setUsers((prev) =>
@@ -90,18 +100,22 @@ const AdminUserListPage = () => {
       alert("Gagal update level");
     } finally {
       setUpdatingId(null);
+      setLoading(false);
+      setSuccessToast("Level Pengguna Berhasil di ganti");
     }
   };
 
   const handleDelete = async (userId) => {
-    const confirmDelete = window.confirm("Yakin ingin menghapus user ini?");
-    if (!confirmDelete) return;
+    setLoading(true);
+    setSuccessToast("Data Berhasil Dihapus");
 
     try {
       await deleteDoc(doc(db, "users", userId));
       setUsers((prev) => prev.filter((user) => user.id !== userId));
     } catch (error) {
       alert("Gagal menghapus user");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -332,10 +346,13 @@ const AdminUserListPage = () => {
       cell: (row) => (
         <div className="flex gap-2 justify-center items-center">
           <button
-            onClick={() => handleDelete(row.id)}
+            onClick={() => {
+              setSelectedUserId(row.id);
+              setOpenModal(true);
+            }}
             className="bg-red-500 text-white px-2 py-1 rounded"
           >
-           <Trash2 className="w-4 h-4" />
+            <Trash2 className="w-4 h-4" />
           </button>
           <Link to={`/admin/edit-user/${row.id}`}>
             <button className="bg-blue-500 text-white px-2 py-1 rounded">
@@ -347,12 +364,22 @@ const AdminUserListPage = () => {
     },
   ];
 
+  if (loading) {
+    return <Loading text="Memuat..." />;
+  }
+
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-gray-100">
       {/* Navbar dan Sidebar */}
       <div className="fixed z-50">
         <AdminNavbar />
         <AdminSidebar />
+        <SuccessFullScreen
+          className="fixed inset-0 flex  z-50"
+          show={successToast}
+          message={successToast || ""}
+          onDone={() => setSuccessToast(false)}
+        />
       </div>
       {showExportModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
@@ -586,6 +613,19 @@ const AdminUserListPage = () => {
           responsive
           noDataComponent="Belum ada pengguna"
         />
+
+        <ConfirmModal
+                  title="Hapus Pekerjaan"
+                  message="Yakin ingin menghapus pekerjaan ini? Semua data terkait akan dihapus."
+                  open={openModal}
+                  onClose={() => setOpenModal(false)}
+                  onConfirm={() => {
+                    if (selectedUserId) {
+                      handleDelete(selectedUserId);
+                      setOpenModal(false);
+                    }
+                  }}
+            />
       </div>
     </div>
   );

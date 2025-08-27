@@ -1,18 +1,13 @@
 import React, { useState } from "react";
 import { auth, db } from "../../services/firebase";
-import {
-  createUserWithEmailAndPassword,
-} from "firebase/auth";
-import {
-  doc,
-  setDoc,
-  deleteDoc,
-  serverTimestamp,
-} from "firebase/firestore";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
 import emailjs from "@emailjs/browser";
+import Loading from "../Loading";
 
-const ModalProsesUser = ({ user, onClose }) => {
+const ModalProsesUser = ({ user, onClose, onSuccess }) => {
   const [level, setLevel] = useState(1); // default level 1
+  const [loading, setLoading] = useState(false);
 
   const sendEmail = async (status) => {
     const templateParams = {
@@ -20,7 +15,6 @@ const ModalProsesUser = ({ user, onClose }) => {
       to_name: user.nama,
       status,
     };
-
     try {
       await emailjs.send(
         "service_7ub17uc",
@@ -35,6 +29,7 @@ const ModalProsesUser = ({ user, onClose }) => {
 
   const handleTerima = async () => {
     try {
+      setLoading(true);
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         user.email,
@@ -54,35 +49,53 @@ const ModalProsesUser = ({ user, onClose }) => {
       await deleteDoc(doc(db, "pending_users", user.id));
 
       await sendEmail("diterima");
-
+      onSuccess();
       onClose();
     } catch (error) {
       console.error("Gagal memproses user:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleTolak = async () => {
     try {
+      setLoading(true);
       await deleteDoc(doc(db, "pending_users", user.id));
       await sendEmail("ditolak");
+      onSuccess();
       onClose();
     } catch (error) {
       console.error("Gagal menolak user:", error);
+    } finally {
+      setLoading(false);
     }
   };
+
+  if (loading) {
+    return <Loading text="Memuat..." />;
+  }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
         <h2 className="text-lg font-bold mb-4">Konfirmasi Akun</h2>
 
-        <p className="mb-1"><strong>Nama:</strong> {user.nama}</p>
-        <p className="mb-1"><strong>Email:</strong> {user.email}</p>
-        <p className="mb-4"><strong>Role:</strong> {user.role || "-"}</p>
+        <p className="mb-1">
+          <strong>Nama:</strong> {user.nama}
+        </p>
+        <p className="mb-1">
+          <strong>Email:</strong> {user.email}
+        </p>
+        <p className="mb-4">
+          <strong>Role:</strong> {user.role || "-"}
+        </p>
 
         {/* Pilih Akses Level */}
         <div className="mb-4">
-          <label className="block text-sm font-semibold mb-1 text-gray-700">Pilih Level Akses:</label>
+          <label className="block text-sm font-semibold mb-1 text-gray-700">
+            Pilih Level Akses:
+          </label>
           <select
             value={level}
             onChange={(e) => setLevel(Number(e.target.value))}

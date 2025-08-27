@@ -12,7 +12,6 @@ const EditUserProfile = () => {
   const [role, setRole] = useState("");
   const [level, setLevel] = useState("");
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [successToast, setSuccessToast] = useState(false);
 
   const navigate = useNavigate();
@@ -47,7 +46,7 @@ const EditUserProfile = () => {
     const currentUser = auth.currentUser;
     if (!currentUser) return;
 
-    setSaving(true);
+    setLoading(true);
     try {
       const userRef = doc(db, "users", currentUser.uid);
       await updateDoc(userRef, {
@@ -61,7 +60,7 @@ const EditUserProfile = () => {
       alert("Gagal menyimpan perubahan.");
       console.error(err);
     } finally {
-      setSaving(false);
+      setLoading(false);
     }
   };
 
@@ -103,10 +102,10 @@ const EditUserProfile = () => {
             <div className="flex justify-between items-center gap-3">
               <button
                 onClick={handleSave}
-                disabled={saving}
+                disabled={loading}
                 className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded font-medium"
               >
-                {saving ? "Menyimpan..." : "Simpan Perubahan"}
+                Simpan
               </button>
               <button
                 onClick={() => navigate(-1)}

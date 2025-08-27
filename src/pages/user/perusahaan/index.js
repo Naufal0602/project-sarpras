@@ -21,6 +21,7 @@ import autoTable from "jspdf-autotable";
 import Loading from "../../../components/Loading.js";
 import axios from "axios";
 import ConfirmModal from "../../../components/Modaldelete.js";
+import SuccessFullScreen from "../../../components/Success";
 
 const AdminPerusahaanListPage = () => {
   const [perusahaanList, setPerusahaanList] = useState([]);
@@ -35,6 +36,7 @@ const AdminPerusahaanListPage = () => {
   const [selectedPerusahaan, setSelectedPerusahaan] = useState(null);
   const [openModal, setOpenModal] = useState(false);
   const [selectedPerusahaanId, setSelectedPerusahaanId] = useState(null);
+  const [successToast, setSuccessToast] = useState(false);
 
   const handleShowPekerjaanModal = (perusahaan) => {
     setSelectedPerusahaan(perusahaan);
@@ -90,6 +92,7 @@ const AdminPerusahaanListPage = () => {
           console.log("✅ Respons hapus Cloudinary:", res.data);
         } else {
           console.warn("⚠️ Tidak ada foto_kantor.public_id di data");
+          console.log("Data perusahaan:", data);  
         }
       } else {
         console.warn("⚠️ Dokumen tidak ditemukan:", perusahaanId);
@@ -101,10 +104,13 @@ const AdminPerusahaanListPage = () => {
         prev.filter((perusahaan) => perusahaan.id !== perusahaanId)
       );
 
-      alert("Perusahaan berhasil dihapus.");
     } catch (error) {
       console.error("❌ Gagal menghapus perusahaan:", error);
       alert("Gagal menghapus perusahaan.");
+    }
+    finally {
+      setLoading(false);
+      setSuccessToast(true);
     }
   };
 
@@ -376,6 +382,12 @@ const AdminPerusahaanListPage = () => {
       <div className="fixed z-50">
         <Navbar />
         <Sidebar />
+        <SuccessFullScreen
+            className="fixed inset-0 flex  z-50"
+            show={successToast}
+            message="Data Berhasil Dihapus"
+            onDone={() => setSuccessToast(false)}
+          />
       </div>
 
       {/* Konten utama */}

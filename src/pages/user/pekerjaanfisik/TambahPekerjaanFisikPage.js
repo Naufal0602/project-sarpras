@@ -126,7 +126,6 @@ export default function TambahPekerjaanFisikDanUpload() {
       setSuccessToast(true);
     }
   };
-
   if (loading) {
     return <Loading text="Menyimpan..." />;
   }

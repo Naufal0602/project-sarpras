@@ -31,6 +31,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Loading from "../../../components/Loading";
 import ConfirmModal from "../../../components/Modaldelete";
+import SuccessFullScreen from "../../../components/Success";
 
 const AdminPekerjaanFisikListPage = () => {
   const [pekerjaanList, setPekerjaanList] = useState([]);
@@ -51,6 +52,7 @@ const AdminPekerjaanFisikListPage = () => {
   const [activeImageId, setActiveImageId] = useState(null);
   const [openModal, setOpenModal] = useState(false);
   const [selectedPekerjaanId, setSelectedPekerjaanId] = useState(null);
+  const [successToast, setSuccessToast] = useState(false);
 
   const bagianUser = role?.includes("user-")
     ? role.replace("user-", "")
@@ -320,6 +322,7 @@ const AdminPekerjaanFisikListPage = () => {
       const galeriRef = collection(db, "galeri");
       const q = query(galeriRef, where("id_pekerjaan", "==", id));
       const querySnapshot = await getDocs(q);
+      setLoading(true);
 
       const publicIds = querySnapshot.docs.map((doc) => doc.data().public_id);
       console.log("Public IDs to delete:", publicIds);
@@ -332,12 +335,16 @@ const AdminPekerjaanFisikListPage = () => {
 
       await deleteDoc(doc(db, "pekerjaan_fisik", id));
       setPekerjaanList((prev) => prev.filter((item) => item.id !== id));
-      alert("Pekerjaan berhasil dihapus.");
     } catch (error) {
       console.error("Gagal menghapus pekerjaan:", error);
       alert("Terjadi kesalahan saat menghapus.");
+    } finally {
+      setLoading(false);
+      setSuccessToast(true);
     }
   };
+
+  console.log("SUCCSESTOAST",successToast);
 
   const formatDate = (timestamp) => {
     if (!timestamp) return "-";
@@ -516,148 +523,160 @@ const AdminPekerjaanFisikListPage = () => {
       item.perusahaan_nama?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+  if (loading) {
+    return <Loading text="Mengupdate..." />;
+  }
+
   return (
-    <div className="flex min-h-screen">
-      <div className="fixed z-50">
-        <Navbar />
-        <Sidebar />
-      </div>
-
-      <div className="flex-1 md:ml-72 pt-20 md:pt-20 xl:pt-20 p-4 sm:p-8 w-full">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-          <h2 className="text-2xl font-bold text-orange-600">
-            Daftar Pekerjaan Fisik
-          </h2>
-          <div className="flex gap-2 w-auto">
-            {isLevel2 && (
-              <Link to="/user/pekerjaan-fisik/tambah">
-                <button className="bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded w-full sm:w-auto">
-                  + Tambah Pekerjaan
-                </button>
-              </Link>
-            )}
-            <button
-              onClick={() => setShowExportModal(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded"
-            >
-              Export
-            </button>
-          </div>
+    <>
+          
+      <div className="flex min-h-screen">
+        <div className="fixed z-50">
+          <Navbar />
+          <Sidebar />
+          <SuccessFullScreen
+            className="fixed inset-0 flex  z-50"
+            show={successToast}
+            message="Data Berhasil Dihapus"
+            onDone={() => setSuccessToast(false)}
+          />
         </div>
 
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4">
-          <div className="w-full md:w-auto">
-            <label className="mr-2 font-medium text-gray-700">
-              Cari Nama Perusahaan:
-            </label>
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Masukkan nama perusahaan"
-              className="border border-gray-300 px-3 py-1 rounded w-full md:w-64"
-            />
-          </div>
-        </div>
-
-        <DataTable
-          columns={columns}
-          data={filteredData}
-          progressPending={loading}
-          progressComponent={<Loading />}
-          pagination
-          highlightOnHover
-          responsive
-          noDataComponent="Belum ada data pekerjaan fisik"
-        />
-      </div>
-
-      <ConfirmModal
-      title="Hapus Pekerjaan"
-      message="Yakin ingin menghapus pekerjaan ini? Semua data terkait akan dihapus."
-        open={openModal}
-        onClose={() => setOpenModal(false)}
-        onConfirm={() => {
-          if (selectedPekerjaanId) {
-            handleDelete(selectedPekerjaanId);
-            setOpenModal(false);
-          }
-        }}
-      />
-
-      {showModal && (
-        <div className="fixed inset-0 z-50 bg-black bg-opacity-60 flex items-center justify-center px-4">
-          <div className="bg-white rounded-lg shadow-lg max-w-5xl w-full relative p-6 overflow-hidden max-h-[90vh] relative">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl lg:text-3xl font-extrabold">
-                {judulModal}
-              </h2>
+        <div className="flex-1 md:ml-72 pt-20 md:pt-20 xl:pt-20 p-4 sm:p-8 w-full">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+            <h2 className="text-2xl font-bold text-orange-600">
+              Daftar Pekerjaan Fisik
+            </h2>
+            <div className="flex gap-2 w-auto">
+              {isLevel2 && (
+                <Link to="/user/pekerjaan-fisik/tambah">
+                  <button className="bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded w-full sm:w-auto">
+                    + Tambah Pekerjaan
+                  </button>
+                </Link>
+              )}
               <button
-                onClick={() => setShowModal(false)}
-                className="text-gray-500 hover:text-red-500 text-xl font-bold"
+                onClick={() => setShowExportModal(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded"
               >
-                ×
+                Export
               </button>
             </div>
+          </div>
 
-            <div className="flex flex-col mt-8 md:flex-row gap-4 h-[75vh]">
-              {/* Kolom Kiri: Detail Informasi */}
-              <div className="md:w-1/2 md:h-full h-1/2 w-full overflow-y-auto pr-4 border-r">
-                <div className="space-y-2 lg:text-lg text-md">
-                  <p>
-                    <span className="font-semibold">Perusahaan:</span>{" "}
-                    {selectedData?.perusahaan_nama || "-"}
-                  </p>
-                  <p>
-                    <span className="font-semibold">Jenis Pekerjaan:</span>{" "}
-                    {selectedData?.jenis_pekerjaan || "-"}
-                  </p>
-                  <p>
-                    <span className="font-semibold">Sekolah:</span>{" "}
-                    {selectedData?.sekolah || "-"}
-                  </p>
-                  <p>
-                    <span className="font-semibold">Deskripsi:</span>{" "}
-                    {selectedData?.deskripsi || "-"}
-                  </p>
-                  <p>
-                    <span className="font-semibold">Tanggal Dibuat:</span>{" "}
-                    {formatDate(selectedData?.created_at)}
-                  </p>
-                  {/* Tambahkan informasi lain sesuai kebutuhan */}
-                </div>
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4">
+            <div className="w-full md:w-auto">
+              <label className="mr-2 font-medium text-gray-700">
+                Cari Nama Perusahaan:
+              </label>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Masukkan nama perusahaan"
+                className="border border-gray-300 px-3 py-1 rounded w-full md:w-64"
+              />
+            </div>
+          </div>
+
+          <DataTable
+            columns={columns}
+            data={filteredData}
+            progressPending={loading}
+            progressComponent={<Loading />}
+            pagination
+            highlightOnHover
+            responsive
+            noDataComponent="Belum ada data pekerjaan fisik"
+          />
+        </div>
+
+        <ConfirmModal
+          title="Hapus Pekerjaan"
+          message="Yakin ingin menghapus pekerjaan ini? Semua data terkait akan dihapus."
+          open={openModal}
+          onClose={() => setOpenModal(false)}
+          onConfirm={() => {
+            if (selectedPekerjaanId) {
+              handleDelete(selectedPekerjaanId);
+              setOpenModal(false);
+            }
+          }}
+        />
+
+        {showModal && (
+          <div className="fixed inset-0 z-50 bg-black bg-opacity-60 flex items-center justify-center px-4">
+            <div className="bg-white rounded-lg shadow-lg max-w-5xl w-full relative p-6 overflow-hidden max-h-[90vh] relative">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl lg:text-3xl font-extrabold">
+                  {judulModal}
+                </h2>
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="text-gray-500 hover:text-red-500 text-xl font-bold"
+                >
+                  ×
+                </button>
               </div>
 
-              {/* Kolom Kanan: Galeri */}
-              <div className="md:w-1/2 md:h-full h-1/2 w-full relative">
-                {gambarList.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 overflow-y-auto max-h-full pr-2 pb-14">
-                    {gambarList.map((item, index) => (
-                      <div
-                        key={index}
-                        className="border rounded overflow-hidden relative group cursor-pointer"
-                        onClick={() =>
-                          setActiveImageId((prev) =>
-                            prev === item.id ? null : item.id
-                          )
-                        }
-                      >
-                        {/* Gambar */}
-                        <img
-                          src={item.url_gambar}
-                          alt={`Gambar ${index}`}
-                          className="w-full h-32 object-cover"
-                        />
+              <div className="flex flex-col mt-8 md:flex-row gap-4 h-[75vh]">
+                {/* Kolom Kiri: Detail Informasi */}
+                <div className="md:w-1/2 md:h-full h-1/2 w-full overflow-y-auto pr-4 border-r">
+                  <div className="space-y-2 lg:text-lg text-md">
+                    <p>
+                      <span className="font-semibold">Perusahaan:</span>{" "}
+                      {selectedData?.perusahaan_nama || "-"}
+                    </p>
+                    <p>
+                      <span className="font-semibold">Jenis Pekerjaan:</span>{" "}
+                      {selectedData?.jenis_pekerjaan || "-"}
+                    </p>
+                    <p>
+                      <span className="font-semibold">Sekolah:</span>{" "}
+                      {selectedData?.sekolah || "-"}
+                    </p>
+                    <p>
+                      <span className="font-semibold">Deskripsi:</span>{" "}
+                      {selectedData?.deskripsi || "-"}
+                    </p>
+                    <p>
+                      <span className="font-semibold">Tanggal Dibuat:</span>{" "}
+                      {formatDate(selectedData?.created_at)}
+                    </p>
+                    {/* Tambahkan informasi lain sesuai kebutuhan */}
+                  </div>
+                </div>
 
-                        {/* Keterangan */}
-                        <p className="text-xs text-center p-1">
-                          {item.keterangan || "-"}
-                        </p>
-
-                        {/* Overlay saat hover dan klik */}
-
+                {/* Kolom Kanan: Galeri */}
+                <div className="md:w-1/2 md:h-full h-1/2 w-full relative">
+                  {gambarList.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 overflow-y-auto max-h-full pr-2 pb-14">
+                      {gambarList.map((item, index) => (
                         <div
-                          className={`
+                          key={index}
+                          className="border rounded overflow-hidden relative group cursor-pointer"
+                          onClick={() =>
+                            setActiveImageId((prev) =>
+                              prev === item.id ? null : item.id
+                            )
+                          }
+                        >
+                          {/* Gambar */}
+                          <img
+                            src={item.url_gambar}
+                            alt={`Gambar ${index}`}
+                            className="w-full h-32 object-cover"
+                          />
+
+                          {/* Keterangan */}
+                          <p className="text-xs text-center p-1">
+                            {item.keterangan || "-"}
+                          </p>
+
+                          {/* Overlay saat hover dan klik */}
+
+                          <div
+                            className={`
                                 absolute top-0 left-0 w-full h-full
                                 bg-black bg-opacity-40 backdrop-blur-sm
                                 items-center justify-center gap-2
@@ -665,196 +684,201 @@ const AdminPekerjaanFisikListPage = () => {
                                 ${activeImageId === item.id ? "flex" : ""}
                                 transition-all duration-300 z-10
                               `}
-                        >
-                          {/* Tombol Zoom (tetap muncul semua level) */}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleZoom(item.url_gambar);
-                            }}
-                            className="bg-white p-2 rounded shadow hover:bg-gray-100"
-                            title="Perbesar Gambar"
                           >
-                            <Fullscreen />
-                          </button>
+                            {/* Tombol Zoom (tetap muncul semua level) */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleZoom(item.url_gambar);
+                              }}
+                              className="bg-white p-2 rounded shadow hover:bg-gray-100"
+                              title="Perbesar Gambar"
+                            >
+                              <Fullscreen />
+                            </button>
 
-                          {/* pakai spread array untuk tombol lain */}
-                          {[
-                            ...(isLevel2
-                              ? [
-                                  <button
-                                    key="thumb"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleSetThumbnail(
-                                        item.id_pekerjaan,
-                                        item.id
-                                      );
-                                    }}
-                                    className="bg-green-500 text-white p-2 rounded shadow hover:bg-green-600"
-                                    title="Jadikan Thumbnail"
-                                  >
-                                    <GalleryThumbnails />
-                                  </button>,
+                            {/* pakai spread array untuk tombol lain */}
+                            {[
+                              ...(isLevel2
+                                ? [
+                                    <button
+                                      key="thumb"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleSetThumbnail(
+                                          item.id_pekerjaan,
+                                          item.id
+                                        );
+                                      }}
+                                      className="bg-green-500 text-white p-2 rounded shadow hover:bg-green-600"
+                                      title="Jadikan Thumbnail"
+                                    >
+                                      <GalleryThumbnails />
+                                    </button>,
 
-                                  <button
-                                    key="edit"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleEditGambar(item.id);
-                                    }}
-                                    className="bg-blue-500 text-white p-2 rounded shadow hover:bg-blue-600"
-                                    title="Edit Keterangan"
-                                  >
-                                    <PencilLine />
-                                  </button>,
+                                    <button
+                                      key="edit"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleEditGambar(item.id);
+                                      }}
+                                      className="bg-blue-500 text-white p-2 rounded shadow hover:bg-blue-600"
+                                      title="Edit Keterangan"
+                                    >
+                                      <PencilLine />
+                                    </button>,
 
-                                  <button
-                                    key="delete"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleDeleteGambar(item);
-                                    }}
-                                    className="bg-red-600 text-white p-2 rounded shadow hover:bg-red-700"
-                                    title="Hapus Gambar"
-                                  >
-                                    <Trash2 />
-                                  </button>,
-                                ]
-                              : []),
-                          ]}
+                                    <button
+                                      key="delete"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteGambar(item);
+                                      }}
+                                      className="bg-red-600 text-white p-2 rounded shadow hover:bg-red-700"
+                                      title="Hapus Gambar"
+                                    >
+                                      <Trash2 />
+                                    </button>,
+                                  ]
+                                : []),
+                            ]}
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-500 text-sm italic">
-                    Tidak ada gambar untuk pekerjaan ini.
-                  </p>
-                )}
-              </div>
-              {/* Tombol Tambah Gambar */}
-              <div className="absolute bottom-4 right-4 p-2">
-                <Link
-                  to={`/user/pekerjaan-fisik/galeri/tambah/${selectedData?.id}`}
-                  className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded shadow"
-                >
-                  + Tambah Gambar
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {zoomImageUrl && (
-        <div
-          className="fixed inset-0 z-50 bg-black bg-opacity-70 flex items-center justify-center"
-          onClick={closeZoom}
-        >
-          <img
-            src={zoomImageUrl}
-            alt="Zoom Gambar"
-            className="max-w-3xl max-h-[80vh] object-contain rounded shadow-lg"
-          />
-        </div>
-      )}
-
-      {showExportModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
-            <h2 className="text-xl font-bold mb-4 text-orange-600">
-              Export Pekerjaan Fisik
-            </h2>
-
-            {/* Pilihan Data */}
-            <div className="mb-4">
-              <label className="font-medium block mb-1">Pilih data:</label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="rangeType"
-                  value="date"
-                  checked={rangeType === "date"}
-                  onChange={(e) => setRangeType(e.target.value)}
-                />
-                Sebagian
-              </label>
-              <label className="flex items-center gap-2 mb-2">
-                <input
-                  type="radio"
-                  name="rangeType"
-                  value="all"
-                  checked={rangeType === "all"}
-                  onChange={(e) => setRangeType(e.target.value)}
-                />
-                Semua data
-              </label>
-            </div>
-
-            {/* Filter tanggal */}
-            {rangeType === "date" && (
-              <div className="mb-4">
-                <label className="block font-medium mb-1">
-                  Pilih Bulan & Tahun:
-                </label>
-                <div className="flex gap-2">
-                  <select
-                    className="border px-3 py-1 rounded w-1/2"
-                    value={selectedMonth}
-                    onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 text-sm italic">
+                      Tidak ada gambar untuk pekerjaan ini.
+                    </p>
+                  )}
+                </div>
+                {/* Tombol Tambah Gambar */}
+                <div className="absolute bottom-4 right-4 p-2">
+                  <Link
+                    to={`/user/pekerjaan-fisik/galeri/tambah/${selectedData?.id}`}
+                    className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded shadow"
                   >
-                    {Array.from({ length: 12 }, (_, i) => (
-                      <option key={i} value={i + 1}>
-                        {new Date(0, i).toLocaleString("id-ID", {
-                          month: "long",
-                        })}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    className="border px-3 py-1 rounded w-1/2"
-                    value={selectedYear}
-                    onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                  >
-                    {Array.from({ length: 5 }, (_, i) => {
-                      const year = new Date().getFullYear() - i;
-                      return (
-                        <option key={year} value={year}>
-                          {year}
-                        </option>
-                      );
-                    })}
-                  </select>
+                    + Tambah Gambar
+                  </Link>
                 </div>
               </div>
-            )}
-
-            {/* Tombol Aksi */}
-            <div className="flex justify-end gap-2 mt-4">
-              <button
-                onClick={() => setShowExportModal(false)}
-                className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400"
-              >
-                Back
-              </button>
-              <button
-                onClick={exportToExcel}
-                className="px-4 py-2 rounded bg-green-500 hover:bg-yellow-600 text-white"
-              >
-                Export Excel
-              </button>
-              <button
-                onClick={exportToPDF}
-                className="px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white"
-              >
-                Export PDF
-              </button>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+
+        {zoomImageUrl && (
+          <div
+            className="fixed inset-0 z-50 bg-black bg-opacity-70 flex items-center justify-center"
+            onClick={closeZoom}
+          >
+            <img
+              src={zoomImageUrl}
+              alt="Zoom Gambar"
+              className="max-w-3xl max-h-[80vh] object-contain rounded shadow-lg"
+            />
+          </div>
+        )}
+
+        {showExportModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+              <h2 className="text-xl font-bold mb-4 text-orange-600">
+                Export Pekerjaan Fisik
+              </h2>
+
+              {/* Pilihan Data */}
+              <div className="mb-4">
+                <label className="font-medium block mb-1">Pilih data:</label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="rangeType"
+                    value="date"
+                    checked={rangeType === "date"}
+                    onChange={(e) => setRangeType(e.target.value)}
+                  />
+                  Sebagian
+                </label>
+                <label className="flex items-center gap-2 mb-2">
+                  <input
+                    type="radio"
+                    name="rangeType"
+                    value="all"
+                    checked={rangeType === "all"}
+                    onChange={(e) => setRangeType(e.target.value)}
+                  />
+                  Semua data
+                </label>
+              </div>
+
+              {/* Filter tanggal */}
+              {rangeType === "date" && (
+                <div className="mb-4">
+                  <label className="block font-medium mb-1">
+                    Pilih Bulan & Tahun:
+                  </label>
+                  <div className="flex gap-2">
+                    <select
+                      className="border px-3 py-1 rounded w-1/2"
+                      value={selectedMonth}
+                      onChange={(e) =>
+                        setSelectedMonth(parseInt(e.target.value))
+                      }
+                    >
+                      {Array.from({ length: 12 }, (_, i) => (
+                        <option key={i} value={i + 1}>
+                          {new Date(0, i).toLocaleString("id-ID", {
+                            month: "long",
+                          })}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      className="border px-3 py-1 rounded w-1/2"
+                      value={selectedYear}
+                      onChange={(e) =>
+                        setSelectedYear(parseInt(e.target.value))
+                      }
+                    >
+                      {Array.from({ length: 5 }, (_, i) => {
+                        const year = new Date().getFullYear() - i;
+                        return (
+                          <option key={year} value={year}>
+                            {year}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {/* Tombol Aksi */}
+              <div className="flex justify-end gap-2 mt-4">
+                <button
+                  onClick={() => setShowExportModal(false)}
+                  className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400"
+                >
+                  Back
+                </button>
+                <button
+                  onClick={exportToExcel}
+                  className="px-4 py-2 rounded bg-green-500 hover:bg-yellow-600 text-white"
+                >
+                  Export Excel
+                </button>
+                <button
+                  onClick={exportToPDF}
+                  className="px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white"
+                >
+                  Export PDF
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
   );
 };
 
