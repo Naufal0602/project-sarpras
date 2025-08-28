@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Users, Menu, X, Building, BicepsFlexed, House } from "lucide-react";
+import { Users, Menu, X, Building, BicepsFlexed, House, Image } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { collection, query, where, onSnapshot } from "firebase/firestore";
@@ -48,7 +48,7 @@ const Sidebar = () => {
     },
     {
       name: "Galeri",
-      icon: BicepsFlexed,
+      icon: Image,
       to: "/user/Galeri",
     },
   ];

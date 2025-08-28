@@ -1,7 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { collection, getDocs, doc, getDoc, query, where} from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  doc,
+  getDoc,
+  query,
+  where,
+} from "firebase/firestore";
 import { db } from "../services/firebase";
-import { X, Fullscreen } from "lucide-react"; // buat close modal
+import { X, Fullscreen, ChevronDown } from "lucide-react"; // buat close modal
 import "./styles/Galeri.css";
 
 const roleToBagian = {
@@ -14,11 +21,39 @@ const Galeri = ({ role }) => {
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [zoomImageUrl, setZoomImageUrl] = useState(null); // modal zoom
+  const [availableYears, setAvailableYears] = useState([]); // daftar tahun
+  const [selectedYear, setSelectedYear] = useState("all"); // tahun yang dipilih
+
+  // Ambil daftar tahun
+  const fetchYears = async () => {
+    try {
+      const snapshotPekerjaan = await getDocs(
+        collection(db, "pekerjaan_fisik")
+      );
+      const yearSet = new Set();
+
+      snapshotPekerjaan.forEach((doc) => {
+        const createdYear = doc.data().created_at?.toDate().getFullYear();
+        if (createdYear) {
+          yearSet.add(createdYear);
+        }
+      });
+
+      const sortedYears = Array.from(yearSet).sort((a, b) => b - a);
+      setAvailableYears(sortedYears);
+    } catch (err) {
+      console.error("Gagal fetch tahun:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchYears();
+  }, []);
 
   useEffect(() => {
     const fetchPhotos = async () => {
       try {
-        // ✅ hanya ambil galeri dengan thumbnail = true
+        setLoading(true);
         const galeriRef = collection(db, "galeri");
         const galeriQuery = query(galeriRef, where("thumbnail", "==", true));
         const galeriSnap = await getDocs(galeriQuery);
@@ -39,7 +74,13 @@ const Galeri = ({ role }) => {
 
           if (pekerjaanSnap.exists()) {
             const pekerjaan = pekerjaanSnap.data();
-            if (pekerjaan.bagian.toLowerCase() === bagianUser.toLowerCase()) {
+            const createdYear = pekerjaan.created_at?.toDate().getFullYear();
+
+            // filter sesuai bagian dan tahun
+            if (
+              pekerjaan.bagian.toLowerCase() === bagianUser.toLowerCase() &&
+              (selectedYear === "all" || createdYear === Number(selectedYear))
+            ) {
               filteredPhotos.push(g);
             }
           }
@@ -54,17 +95,38 @@ const Galeri = ({ role }) => {
     };
 
     fetchPhotos();
-  }, [role]);
+  }, [role, selectedYear]);
 
   const placeholders = Array.from({ length: 10 }, (_, i) => i);
   const bagianUser = roleToBagian[role];
 
   return (
     <div>
-      {/* Judul */}
-      <h2 className="text-3xl font-bold mb-12 text-center">
-        Galeri pekerjaan fisik bidang {bagianUser}
-      </h2>
+      {/* Header + Select Tahun */}
+      <div className="flex flex-col md:flex-row justify-between items-center mb-8">
+        <h2 className="text-3xl font-bold mb-4 md:mb-0 text-center">
+          Galeri pekerjaan fisik bidang {bagianUser}
+        </h2>
+        <div className="relative w-40 flex border-b-2 border-orange-400 hover:border-2 px-2 transition duration-200">
+          <select
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(e.target.value)}
+            className="z-10 bg-transparent text-xl font-bold pr-12 text-orange-400 border-0  focus:outline-none focus:border-orange-500 transition-colors duration-200 pb-1 appearance-none"
+          >
+            <option value="all">Semua Tahun</option>
+            {availableYears.map((year) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            ))}
+          </select>
+          <ChevronDown
+            size={18}
+            className="absolute text-orange-400"
+            style={{ right: "0px", marginTop: "11px" }}
+          />
+        </div>
+      </div>
 
       {/* Grid Galeri */}
       <div className="gallery grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -75,7 +137,7 @@ const Galeri = ({ role }) => {
                 className="bg-gray-200 animate-pulse h-48 rounded-lg"
               />
             ))
-          : photos.slice(0, 10).map((photo) => (
+          : photos.map((photo) => (
               <figure
                 key={photo.id}
                 className="relative group rounded-lg overflow-hidden shadow"
@@ -89,7 +151,7 @@ const Galeri = ({ role }) => {
                   {photo.keterangan}
                 </figcaption>
 
-                {/* ✅ Overlay tombol tetap */}
+                {/* Overlay tombol fullscreen */}
                 <div className="absolute inset-0 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 bg-black bg-opacity-40 transition">
                   <button
                     onClick={(e) => {

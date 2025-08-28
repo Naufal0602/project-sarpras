@@ -53,6 +53,8 @@ const AdminPekerjaanFisikListPage = () => {
   const [openModal, setOpenModal] = useState(false);
   const [selectedPekerjaanId, setSelectedPekerjaanId] = useState(null);
   const [successToast, setSuccessToast] = useState(false);
+  const [openDeleteGambarModal, setOpenDeleteGambarModal] = useState(false);
+  const [selectedGambar, setSelectedGambar] = useState(null);
 
   const bagianUser = role?.includes("user-")
     ? role.replace("user-", "")
@@ -157,8 +159,7 @@ const AdminPekerjaanFisikListPage = () => {
       "Jenis Pekerjaan",
       "Sekolah",
       "Deskripsi",
-      "Bagian",
-      "Dibuat",
+      "Tanggal",
     ];
 
     const tableRows = exportData.map((row) => [
@@ -166,8 +167,7 @@ const AdminPekerjaanFisikListPage = () => {
       row.jenis_pekerjaan || "-",
       row.sekolah || "-",
       row.deskripsi || "-",
-      row.bagian || "-",
-      formatDate(row.created_at),
+      row.tanggal_pekerjaan || "-",
     ]);
 
     autoTable(doc, {
@@ -205,8 +205,7 @@ const AdminPekerjaanFisikListPage = () => {
       Jenis_Pekerjaan: row.jenis_pekerjaan || "-",
       Sekolah: row.sekolah || "-",
       Deskripsi: row.deskripsi || "-",
-      Bagian: row.bagian || "-",
-      Dibuat: formatDate(row.created_at),
+      Tanggal: row.tanggal_pekerjaan || "-",
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(exportData);
@@ -329,7 +328,7 @@ const AdminPekerjaanFisikListPage = () => {
 
       if (publicIds.length > 0) {
         await axios.post("http://localhost:3001/api/cloudinary/", {
-          public_id: publicIds,
+          public_id: [publicIds],
         });
       }
 
@@ -344,7 +343,7 @@ const AdminPekerjaanFisikListPage = () => {
     }
   };
 
-  console.log("SUCCSESTOAST",successToast);
+  console.log("SUCCSESTOAST", successToast);
 
   const formatDate = (timestamp) => {
     if (!timestamp) return "-";
@@ -356,10 +355,8 @@ const AdminPekerjaanFisikListPage = () => {
   };
 
   const handleDeleteGambar = async (item) => {
-    const konfirmasi = window.confirm("Yakin ingin menghapus gambar ini?");
-    if (!konfirmasi) return;
-
     try {
+      setLoading(true);
       const q = query(
         collection(db, "galeri"),
         where("url_gambar", "==", item.url_gambar)
@@ -371,27 +368,25 @@ const AdminPekerjaanFisikListPage = () => {
         return;
       }
 
-      // Hapus semua dokumen yang cocok
       await Promise.all(
         snapshot.docs.map(async (docu) => {
           await deleteDoc(doc(db, "galeri", docu.id));
         })
       );
 
-      // 2. Hapus dari Cloudinary menggunakan public_id
       await axios.post("http://localhost:3001/api/cloudinary", {
-        public_id: item.public_id,
+        public_id: [item.public_id],
       });
 
-      // 3. Update tampilan gambar di UI
       setGambarList((prev) =>
         prev.filter((g) => g.url_gambar !== item.url_gambar)
       );
-
-      alert("Gambar berhasil dihapus.");
     } catch (e) {
       console.error("Gagal hapus gambar:", e);
       alert("Terjadi kesalahan saat menghapus gambar.");
+    } finally {
+      setLoading(false);
+      setSuccessToast(true);
     }
   };
 
@@ -438,8 +433,8 @@ const AdminPekerjaanFisikListPage = () => {
     },
 
     {
-      name: "Dibuat",
-      selector: (row) => formatDate(row.created_at),
+      name: "Tanggal",
+      selector: (row) => row.tanggal_pekerjaan,
       sortable: true,
     },
     ...(isLevel1
@@ -529,17 +524,10 @@ const AdminPekerjaanFisikListPage = () => {
 
   return (
     <>
-          
       <div className="flex min-h-screen">
         <div className="fixed z-50">
           <Navbar />
           <Sidebar />
-          <SuccessFullScreen
-            className="fixed inset-0 flex  z-50"
-            show={successToast}
-            message="Data Berhasil Dihapus"
-            onDone={() => setSuccessToast(false)}
-          />
         </div>
 
         <div className="flex-1 md:ml-72 pt-20 md:pt-20 xl:pt-20 p-4 sm:p-8 w-full">
@@ -732,7 +720,8 @@ const AdminPekerjaanFisikListPage = () => {
                                       key="delete"
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        handleDeleteGambar(item);
+                                        setSelectedGambar(item); // simpan gambar yang dipilih
+                                        setOpenDeleteGambarModal(true); // buka modal
                                       }}
                                       className="bg-red-600 text-white p-2 rounded shadow hover:bg-red-700"
                                       title="Hapus Gambar"
@@ -878,6 +867,32 @@ const AdminPekerjaanFisikListPage = () => {
           </div>
         )}
       </div>
+      <ConfirmModal
+        title="Hapus Gambar"
+        message="Yakin ingin menghapus gambar ini?"
+        open={openDeleteGambarModal}
+        onClose={() => {
+          setOpenDeleteGambarModal(false);
+          setSelectedGambar(null);
+        }}
+        onConfirm={() => {
+          if (selectedGambar) {
+            handleDeleteGambar(selectedGambar); // tetap pakai fungsi lama
+            setOpenDeleteGambarModal(false);
+            setSelectedGambar(null);
+          }
+        }}
+      />
+
+      <SuccessFullScreen
+        className="fixed inset-0 flex  z-50"
+        show={successToast}
+        message="Data Berhasil Dihapus"
+        onDone={() => {
+          setSuccessToast(false);
+          window.location.reload(); // refresh halaman
+        }}
+      />
     </>
   );
 };

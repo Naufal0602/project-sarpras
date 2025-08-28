@@ -13,6 +13,7 @@ import {
 import Navbar from "../../../components/template/Navbar";
 import Sidebar from "../../../components/template/SideBar";
 import Loading from "../../../components/Loading";
+import SuccessFullScreen from "../../../components/Success";
 
 export default function UploadForm() {
   const { id } = useParams();
@@ -21,6 +22,7 @@ export default function UploadForm() {
   const [files, setFiles] = useState([]);
   const [keterangan, setKeterangan] = useState("");
   const [loading, setLoading] = useState(false);
+  const [successToast, setSuccessToast] = useState(false);
   const [previewUrls, setPreviewUrls] = useState([]);
 
   const handleUpload = async () => {
@@ -58,13 +60,11 @@ export default function UploadForm() {
         // Setelah satu gambar dapat true, set flag jadi true agar sisanya false
         if (!hasThumbnail) hasThumbnail = true;
       }
-
-      alert("Semua gambar berhasil diupload!");
-      navigate("/user/pekerjaan-fisik");
     } catch (err) {
       console.error("Gagal upload:", err);
       alert("Gagal upload satu atau lebih gambar.");
     } finally {
+      setSuccessToast(true);
       setLoading(false);
     }
   };
@@ -78,6 +78,12 @@ export default function UploadForm() {
       <div className="fixed z-50">
         <Navbar />
         <Sidebar />
+        <SuccessFullScreen
+          className="fixed inset-0 flex  z-50"
+          show={successToast}
+          message="Gambar berhasil diupload!"
+          onDone={() => navigate("/user/pekerjaan-fisik")}
+        />
       </div>
       <div className="flex justify-center items-start w-full min-h-[calc(100vh-80px)] pt-10 mt-10 px-4">
         <div className="w-full max-w-2xl md:max-w-xl bg-white rounded-lg shadow-md p-6">

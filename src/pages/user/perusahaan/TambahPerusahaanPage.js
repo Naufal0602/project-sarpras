@@ -25,6 +25,9 @@ const TambahPerusahaanPage = () => {
   const [fotoKantorFile, setFotoKantorFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [successToast, setSuccessToast] = useState(false);
+  const [manualInput, setManualInput] = useState(
+    `${-6.572344888759943}, ${106.80879449857458}`
+  );
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -86,7 +89,6 @@ const TambahPerusahaanPage = () => {
 
     useEffect(() => {
       if (!map) return;
-
       map.whenReady(() => {
         setTimeout(() => {
           map.invalidateSize();
@@ -94,23 +96,32 @@ const TambahPerusahaanPage = () => {
       });
     }, [map]);
 
-    useEffect(() => {
-      if (koordinat) {
-      }
-    }, [koordinat]);
-
     return koordinat ? <Marker position={koordinat} /> : null;
   }
+
+  const handleManualInput = (e) => {
+    const value = e.target.value;
+    setManualInput(value);
+
+    // cek format lat, lng
+    const parts = value.split(",").map((p) => p.trim());
+    if (parts.length === 2) {
+      const lat = parseFloat(parts[0]);
+      const lng = parseFloat(parts[1]);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        setKoordinat({ lat, lng });
+      }
+    }
+  };
+
   return (
     <>
- 
       <SuccessFullScreen
-      className="fixed inset-0 flex  z-50"
+        className="fixed inset-0 flex  z-50"
         show={successToast}
         message="Perusahaan berhasil ditambahkan!"
         onDone={() => navigate("/user/perusahaan")}
       />
-
 
       {loading && (
         <div className="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50">
@@ -220,6 +231,14 @@ const TambahPerusahaanPage = () => {
               <label className="block font-medium text-gray-700 mb-1">
                 Titik Koordinat (Klik di Map)
               </label>
+
+              <input
+                type="text"
+                value={manualInput}
+                onChange={handleManualInput}
+                placeholder="-6.803990570390972, 107.20227608428854"
+                className="w-full border rounded p-2 mb-3"
+              />
 
               {!loading && (
                 <MapContainer

@@ -12,6 +12,7 @@ import {
   serverTimestamp,
   doc,
 } from "firebase/firestore";
+import Select from "react-select";
 import Navbar from "../../../components/template/Navbar";
 import Sidebar from "../../../components/template/SideBar";
 import Loading from "../../../components/Loading";
@@ -24,6 +25,7 @@ export default function TambahPekerjaanFisikDanUpload() {
   const [sekolah, setSekolah] = useState("");
   const [deskripsi, setDeskripsi] = useState("");
   const [bagian, setBagian] = useState("");
+  const [tanggalPekerjaan, setTanggalPekerjaan] = useState("");
   const [perusahaanOptions, setPerusahaanOptions] = useState([]);
   const [successToast, setSuccessToast] = useState(false);
 
@@ -71,10 +73,6 @@ export default function TambahPekerjaanFisikDanUpload() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!files.length) {
-      alert("Pilih minimal satu gambar.");
-      return;
-    }
 
     try {
       setLoading(true);
@@ -86,6 +84,7 @@ export default function TambahPekerjaanFisikDanUpload() {
         sekolah,
         deskripsi,
         bagian,
+        tanggal_pekerjaan: tanggalPekerjaan,
         created_at: serverTimestamp(),
         updated_at: serverTimestamp(),
       });
@@ -157,18 +156,22 @@ export default function TambahPekerjaanFisikDanUpload() {
             {/* --- FORM PEKERJAAN --- */}
             <label className="block mb-3">
               <span className="font-medium">Perusahaan</span>
-              <select
-                value={perusahaanId}
-                onChange={(e) => setPerusahaanId(e.target.value)}
-                className="w-full border px-3 py-2 rounded"
+              <Select
+                value={
+                  perusahaanOptions
+                    .map((p) => ({ value: p.id, label: p.nama }))
+                    .find((opt) => opt.value === perusahaanId) || null
+                }
+                onChange={(selected) => setPerusahaanId(selected.value)}
+                options={perusahaanOptions.map((p) => ({
+                  value: p.id,
+                  label: p.nama,
+                }))}
+                className="w-full"
+                placeholder="Pilih perusahaan..."
+                isSearchable
                 required
-              >
-                {perusahaanOptions.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.nama}
-                  </option>
-                ))}
-              </select>
+              />
             </label>
 
             <label className="block mb-3">
@@ -188,6 +191,17 @@ export default function TambahPekerjaanFisikDanUpload() {
                 type="text"
                 value={sekolah}
                 onChange={(e) => setSekolah(e.target.value)}
+                className="w-full border px-3 py-2 rounded"
+                required
+              />
+            </label>
+
+            <label className="block mb-3">
+              <span className="font-medium">Tanggal Pekerjaan</span>
+              <input
+                type="date"
+                value={tanggalPekerjaan}
+                onChange={(e) => setTanggalPekerjaan(e.target.value)}
                 className="w-full border px-3 py-2 rounded"
                 required
               />
@@ -248,14 +262,22 @@ export default function TambahPekerjaanFisikDanUpload() {
                 className="w-full border px-3 py-2 rounded"
               />
             </label>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 rounded"
-            >
-              Simpan & Upload
-            </button>
+            <div className="flex justify-end gap-4">
+              <button
+                type="button"
+                onClick={() => navigate("/user/pekerjaan-fisik")}
+                className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded"
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded"
+              >
+                Simpan
+              </button>
+            </div>
           </form>
         </div>
       </div>
