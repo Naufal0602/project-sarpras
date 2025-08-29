@@ -72,8 +72,8 @@ function RegisterPage() {
 
   return (
     <>
-      <div className="bg-[url('/bg.png')] bg-cover bg-center bg-no-repeat p-20 w-full h-full items-center justify-center">
-        <div className="bg-gray-50 max-w-md mx-auto bg-white rounded-xl p-4 shadow-lg overflow-hidden mt-4">
+      <div className="bg-[url('/bg.png')] bg-cover bg-center bg-no-repeat p-4 w-full h-full items-center justify-center">
+        <div className="bg-gray-50 md:max-w-md md:mx-auto w-full bg-white rounded-xl p-4 shadow-lg overflow-hidden mt-4">
           <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-6 text-center rounded-lg">
             <h2 className="text-xl md:text-2xl font-bold text-white">Register Pengguna Baru</h2>
             <p className="text-orange-100 mt-2 text-sm">Tambahkan pengguna ke sistem</p>
