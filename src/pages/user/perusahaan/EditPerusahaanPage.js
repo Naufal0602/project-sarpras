@@ -109,7 +109,7 @@ const EditPerusahaanPage = () => {
           const docRef = doc(db, "perusahaan", id);
           const docSnap = await getDoc(docRef);
           const data = docSnap.data();
-          await axios.post("http://localhost:3001/api/cloudinary/", {
+          await axios.post("https://be-sarpras.vercel.app/api/cloudinary/", {
             public_id: [data.foto_kantor.public_id],
           });
         } catch (e) {

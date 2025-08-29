@@ -327,7 +327,7 @@ const AdminPekerjaanFisikListPage = () => {
       console.log("Public IDs to delete:", publicIds);
 
       if (publicIds.length > 0) {
-        await axios.post("http://localhost:3001/api/cloudinary/", {
+        await axios.post("https://be-sarpras.vercel.app/api/cloudinary/", {
           public_id: [publicIds],
         });
       }
@@ -374,7 +374,7 @@ const AdminPekerjaanFisikListPage = () => {
         })
       );
 
-      await axios.post("http://localhost:3001/api/cloudinary", {
+      await axios.post("https://be-sarpras.vercel.app/api/cloudinary", {
         public_id: [item.public_id],
       });
 

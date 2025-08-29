@@ -84,7 +84,7 @@ const AdminPerusahaanListPage = () => {
         const data = docSnap.data();
         if (data.foto_kantor?.public_id) {
           const res = await axios.post(
-            "http://localhost:3001/api/cloudinary/",
+            "https://be-sarpras.vercel.app/api/cloudinary/",
             {
               public_id: [data.foto_kantor.public_id],
             }

@@ -1,6 +1,6 @@
-import axios from 'axios';
+import axios from "axios";
 
-const API_BASE_URL = 'http://localhost:3001/api/cloudinary';
+const API_BASE_URL = "https://be-sarpras.vercel.app/api/cloudinary";
 
 export const deleteImageCloudinary = async (public_id) => {
   try {
