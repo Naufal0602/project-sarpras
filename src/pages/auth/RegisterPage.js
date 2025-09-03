@@ -151,18 +151,26 @@ function RegisterPage() {
                 className={`w-full py-3 px-6 rounded-lg font-semibold transition-all duration-200 shadow-lg ${
                   captchaVerified
                     ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700"
-                    : "bg-gray-400 text-gray-200 cursor-not-allowed"
+                    : "bg-gray-600 text-gray-200 cursor-not-allowed"
                 }`}
               >
                 Daftar
               </button>
+
+                <button
+                  type="button"
+                  onClick={() => navigate("/login")}
+                  className="bg-gray-400 text-gray-200 w-full py-3 px-6 rounded-lg font-semibold transition-all duration-200 shadow-lg"
+                >
+                  Kembali ke halaman login
+                </button>
             </form>
           </div>
         </div>
        </div> 
        {loading && <Loading text="Memproses Pendaftaran..." />}
       <SuccessFullScreen
-        className="fixed inset-0 flex  z-50"
+        className="fixed inset-0 flex z-50"
         show={successToast}
         message="Pendaftaran Berhasil! Silakan Cek Email Anda."
         onDone={() => navigate("/login")}/>
