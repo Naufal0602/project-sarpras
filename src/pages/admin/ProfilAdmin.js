@@ -108,7 +108,7 @@ const UserProfile = () => {
             </div>
           </div>
 
-          <div className="mt-8 flex justify-end gap-4">
+          <div className="mt-8 flex md:flex-col flex-col justify-end gap-4">
             <button
               onClick={() => navigate(-1)}
               className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg"
@@ -123,8 +123,7 @@ const UserProfile = () => {
             </button>
             <Link
               to="/admin/ganti-password"
-              className="ml-4 inline-block bg-red-600 text-white px-6 py-3 rounded-lg 
-             hover:bg-red-700 active:scale-95 transition-all duration-200 font-medium shadow-md"
+              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg"
             >
               Ganti Password
             </Link>
