@@ -407,15 +407,8 @@ const AdminPerusahaanListPage = () => {
                 <button className="bg-green-600 hover:bg-green-700 text-white font-semibold lg:px-4 py-2 px-2 rounded">
                   + Tambah Perusahaan
                 </button>
-              </Link>
-              
+              </Link>  
             )}
-
-            <Link to="/user/perusahaan/import">
-                <button className="bg-green-600 hover:bg-green-700 text-white font-semibold lg:px-4 py-2 px-2 rounded">
-                  IMPORT
-                </button>
-              </Link>
             <button
               onClick={() => setShowExportModal(true)}
               className="bg-blue-600 hover:bg-blue-700 text-white font-semibold lg:px-4 px-2 py-2 rounded"
