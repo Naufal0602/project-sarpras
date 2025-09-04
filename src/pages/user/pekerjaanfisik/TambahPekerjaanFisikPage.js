@@ -22,7 +22,7 @@ import SuccessFullScreen from "../../../components/Success";
 export default function TambahPekerjaanFisikDanUpload() {
   const [perusahaanId, setPerusahaanId] = useState("");
   const [jenisPekerjaan, setJenisPekerjaan] = useState("");
-  const [sekolah, setSekolah] = useState("");
+  const [pekerjaan, setPekerjaan] = useState("");
   const [deskripsi, setDeskripsi] = useState("");
   const [bagian, setBagian] = useState("");
   const [tanggalPekerjaan, setTanggalPekerjaan] = useState("");
@@ -81,7 +81,7 @@ export default function TambahPekerjaanFisikDanUpload() {
       const pekerjaanRef = await addDoc(collection(db, "pekerjaan_fisik"), {
         perusahaan_id: perusahaanId,
         jenis_pekerjaan: jenisPekerjaan,
-        sekolah,
+        pekerjaan,
         deskripsi,
         bagian,
         tanggal_pekerjaan: tanggalPekerjaan,
@@ -186,11 +186,11 @@ export default function TambahPekerjaanFisikDanUpload() {
             </label>
 
             <label className="block mb-3">
-              <span className="font-medium">Sekolah</span>
+              <span className="font-medium">Pekerjaan</span>
               <input
                 type="text"
-                value={sekolah}
-                onChange={(e) => setSekolah(e.target.value)}
+                value={pekerjaan}
+                onChange={(e) => setPekerjaan(e.target.value)}
                 className="w-full border px-3 py-2 rounded"
                 required
               />

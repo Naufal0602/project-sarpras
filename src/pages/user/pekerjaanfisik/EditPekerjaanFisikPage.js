@@ -22,7 +22,7 @@ const EditPekerjaanFisikPage = () => {
 
   const [perusahaanId, setPerusahaanId] = useState("");
   const [jenisPekerjaan, setJenisPekerjaan] = useState("");
-  const [sekolah, setSekolah] = useState("");
+  const [pekerjaan, setPekerjaan] = useState("");
   const [deskripsi, setDeskripsi] = useState("");
   const [loading, setLoading] = useState(false);
   const [tanggalPekerjaan, setTanggalPekerjaan] = useState("");
@@ -62,7 +62,7 @@ const EditPekerjaanFisikPage = () => {
           const data = docSnap.data();
           setPerusahaanId(data.perusahaan_id || "");
           setJenisPekerjaan(data.jenis_pekerjaan || "");
-          setSekolah(data.sekolah || "");
+          setPekerjaan(data.pekerjaan || "");
           setDeskripsi(data.deskripsi || "");
           setTanggalPekerjaan(data.tanggal_pekerjaan || "");
         } else {
@@ -87,7 +87,7 @@ const EditPekerjaanFisikPage = () => {
       await updateDoc(docRef, {
         perusahaan_id: perusahaanId,
         jenis_pekerjaan: jenisPekerjaan,
-        sekolah,
+        pekerjaan,
         deskripsi,
         tanggal_pekerjaan: tanggalPekerjaan,
         updated_at: serverTimestamp(),
@@ -167,12 +167,12 @@ const EditPekerjaanFisikPage = () => {
 
             <div className="mb-4">
               <label className="block font-medium text-gray-700 mb-1">
-                Sekolah
+                pekerjaan
               </label>
               <input
                 type="text"
-                value={sekolah}
-                onChange={(e) => setSekolah(e.target.value)}
+                value={pekerjaan}
+                onChange={(e) => setPekerjaan(e.target.value)}
                 className="w-full border px-4 py-2 rounded"
                 required
               />

@@ -157,7 +157,7 @@ const AdminPekerjaanFisikListPage = () => {
     const tableColumn = [
       "Perusahaan",
       "Jenis Pekerjaan",
-      "Sekolah",
+      "Pekerjaan",
       "Deskripsi",
       "Tanggal",
     ];
@@ -165,7 +165,7 @@ const AdminPekerjaanFisikListPage = () => {
     const tableRows = exportData.map((row) => [
       row.perusahaan_nama || "-",
       row.jenis_pekerjaan || "-",
-      row.sekolah || "-",
+      row.pekerjaan || "-",
       row.deskripsi || "-",
       row.tanggal_pekerjaan || "-",
     ]);
@@ -203,7 +203,7 @@ const AdminPekerjaanFisikListPage = () => {
     const exportData = getFilteredExportData().map((row) => ({
       Perusahaan: row.perusahaan_nama || "-",
       Jenis_Pekerjaan: row.jenis_pekerjaan || "-",
-      Sekolah: row.sekolah || "-",
+      pekerjaan: row.pekerjaan || "-",
       Deskripsi: row.deskripsi || "-",
       Tanggal: row.tanggal_pekerjaan || "-",
     }));
@@ -402,8 +402,8 @@ const AdminPekerjaanFisikListPage = () => {
       wrap: true,
     },
     {
-      name: "Sekolah",
-      selector: (row) => row.sekolah || "-",
+      name: "pekerjaan",
+      selector: (row) => row.pekerjaan || "-",
       wrap: true,
     },
     {
@@ -620,8 +620,8 @@ const AdminPekerjaanFisikListPage = () => {
                       {selectedData?.jenis_pekerjaan || "-"}
                     </p>
                     <p>
-                      <span className="font-semibold">Sekolah:</span>{" "}
-                      {selectedData?.sekolah || "-"}
+                      <span className="font-semibold">pekerjaan:</span>{" "}
+                      {selectedData?.pekerjaan || "-"}
                     </p>
                     <p>
                       <span className="font-semibold">Deskripsi:</span>{" "}

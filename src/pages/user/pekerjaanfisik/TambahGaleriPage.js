@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { uploadToCloudinary } from "../../../services/cloudinaryService";
 import { db } from "../../../services/firebase";
@@ -24,7 +24,78 @@ export default function UploadForm() {
   const [loading, setLoading] = useState(false);
   const [successToast, setSuccessToast] = useState(false);
   const [previewUrls, setPreviewUrls] = useState([]);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [photoTaken, setPhotoTaken] = useState(false); // ✅ status notif ambil foto
 
+
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
+  const [cameraMode, setCameraMode] = useState("environment");
+
+  // 🎥 buka kamera
+  const startCamera = async () => {
+    try {
+      // hentikan stream lama kalau ada
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: cameraMode },
+      });
+      streamRef.current = stream;
+      videoRef.current.srcObject = stream;
+    } catch (err) {
+      console.error("Tidak bisa akses kamera:", err);
+      alert("Gagal membuka kamera, cek izin browser!");
+    }
+  };
+
+  const toggleCamera = () => {
+    setCameraMode((prev) => (prev === "user" ? "environment" : "user"));
+  };
+
+  // 📸 ambil foto dari video -> canvas
+  const takePhoto = async () => {
+    try {
+      const track = streamRef.current.getVideoTracks()[0];
+      const imageCapture = new ImageCapture(track);
+      const photoBlob = await imageCapture.takePhoto();
+
+      const photoFile = new File([photoBlob], `camera-${Date.now()}.jpg`, {
+        type: "image/jpeg",
+      });
+      const photoUrl = URL.createObjectURL(photoBlob);
+
+      setFiles((prev) => [...prev, photoFile]);
+      setPreviewUrls((prev) => [...prev, photoUrl]);
+
+      // tampilkan notifikasi sebentar
+      setPhotoTaken(true);
+      setTimeout(() => setPhotoTaken(false), 1200);
+    } catch (err) {
+      console.error("Gagal ambil foto:", err);
+      alert("Tidak bisa ambil foto.");
+    }
+  };
+
+  // ❌ hapus gambar dari preview
+  const removeFile = (index) => {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
+    setPreviewUrls((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // 📂 pilih file manual
+  const handleFileChange = (e) => {
+    const selected = Array.from(e.target.files);
+    setFiles((prev) => [...prev, ...selected]);
+    setPreviewUrls((prev) => [
+      ...prev,
+      ...selected.map((file) => URL.createObjectURL(file)),
+    ]);
+  };
+
+  // 🚀 Upload ke Cloudinary + Firestore
   const handleUpload = async () => {
     if (!files.length) {
       alert("Pilih minimal satu gambar.");
@@ -34,7 +105,6 @@ export default function UploadForm() {
     try {
       setLoading(true);
 
-      // Cek apakah sudah ada thumbnail di pekerjaan ini
       const q = query(
         collection(db, "galeri"),
         where("id_pekerjaan", "==", id),
@@ -54,18 +124,19 @@ export default function UploadForm() {
           public_id: public_id,
           keterangan: keterangan,
           created_at: serverTimestamp(),
-          thumbnail: hasThumbnail ? false : true, // hanya true jika belum ada thumbnail
+          thumbnail: hasThumbnail ? false : true,
         });
 
-        // Setelah satu gambar dapat true, set flag jadi true agar sisanya false
         if (!hasThumbnail) hasThumbnail = true;
       }
     } catch (err) {
-      console.error("Gagal upload:", err);
       alert("Gagal upload satu atau lebih gambar.");
     } finally {
       setSuccessToast(true);
       setLoading(false);
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((t) => t.stop());
+      }
     }
   };
 
@@ -79,7 +150,7 @@ export default function UploadForm() {
         <Navbar />
         <Sidebar />
         <SuccessFullScreen
-          className="fixed inset-0 flex  z-50"
+          className="fixed inset-0 flex z-50"
           show={successToast}
           message="Gambar berhasil diupload!"
           onDone={() => navigate("/user/pekerjaan-fisik")}
@@ -99,27 +170,41 @@ export default function UploadForm() {
               type="file"
               accept="image/*"
               multiple
-              onChange={(e) => {
-                const selected = Array.from(e.target.files);
-                setFiles(selected);
-                setPreviewUrls(
-                  selected.map((file) => URL.createObjectURL(file))
-                );
-              }}
+              onChange={handleFileChange}
               className="mt-1 block w-full text-sm text-gray-700 border border-gray-300 rounded-md cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
             />
+
+            <button
+              type="button"
+              onClick={() => {
+                setCameraOpen(true);
+                setTimeout(() => startCamera(), 300);
+              }}
+              className="w-full bg-blue-500 text-white py-2 px-4 rounded-md mt-2"
+            >
+              Buka Kamera
+            </button>
           </label>
 
           {/* PREVIEW */}
           {previewUrls?.length > 0 && (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4">
               {previewUrls.map((url, idx) => (
-                <div key={idx} className="border rounded-md overflow-hidden">
+                <div
+                  key={idx}
+                  className="relative border rounded-md overflow-hidden"
+                >
                   <img
                     src={url}
                     alt={`Preview ${idx}`}
                     className="w-full h-28 object-cover"
                   />
+                  <button
+                    onClick={() => removeFile(idx)}
+                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs"
+                  >
+                    ✕
+                  </button>
                   <p className="text-xs text-center p-1 truncate">
                     {files[idx]?.name}
                   </p>
@@ -154,6 +239,58 @@ export default function UploadForm() {
           </button>
         </div>
       </div>
+
+      {/* MODAL KAMERA */}
+      {cameraOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 text-center">
+            <h2 className="text-lg font-semibold mb-4">Ambil Foto</h2>
+
+            {/* PREVIEW VIDEO */}
+            <video
+              ref={videoRef}
+              className="w-full h-48 bg-black rounded-md mb-4"
+              autoPlay
+              muted
+            />
+
+            {/* NOTIFIKASI BERHASIL */}
+            {photoTaken && (
+              <div className="text-green-600 font-semibold mb-2 animate-pulse">
+                ✅ Gambar berhasil diambil
+              </div>
+            )}
+
+            <div className="flex gap-2 justify-center">
+              <button
+                onClick={takePhoto}
+                className="flex-1 bg-green-500 text-white py-2 px-4 rounded-md"
+              >
+                Ambil Foto
+              </button>
+              <button
+                onClick={toggleCamera}
+                className="flex-1 bg-yellow-500 text-white py-2 px-4 rounded-md"
+              >
+                Ganti Kamera
+              </button>
+              <button
+                onClick={() => {
+                  if (streamRef.current) {
+                    streamRef.current
+                      .getTracks()
+                      .forEach((track) => track.stop());
+                  }
+                  setCameraOpen(false);
+                }}
+                className="flex-1 bg-red-500 text-white py-2 px-4 rounded-md"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

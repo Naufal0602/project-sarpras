@@ -225,26 +225,30 @@ const AdminPerusahaanListPage = () => {
   };
 
   const exportToExcel = () => {
-    const data = getExportData().map((row) => ({
-      "Nama Perusahaan": row.nama_perusahaan || "-",
-      Direktur: row.direktur || "-",
-      Alamat: row.alamat || "-",
-      Status: row.status || "-",
-      Dibuat: formatDate(row.created_at),
-    }));
+  const data = getExportData().map((row) => ({
+    ID: row.id || "-", // tambahkan kolom ID
+    "Nama Perusahaan": row.nama_perusahaan || "-",
+    Direktur: row.direktur || "-",
+    Alamat: row.alamat || "-",
+    Status: row.status || "-",
+    Dibuat: formatDate(row.created_at),
+  }));
 
-    const worksheet = XLSX.utils.json_to_sheet(data);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Perusahaan");
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Perusahaan");
 
-    const excelBuffer = XLSX.write(workbook, {
-      bookType: "xlsx",
-      type: "array",
-    });
-    const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
-    saveAs(blob, `DataPerusahaan_${getFormattedNow()}.xlsx`);
-  };
+  const excelBuffer = XLSX.write(workbook, {
+    bookType: "xlsx",
+    type: "array",
+  });
 
+  const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
+  saveAs(blob, `DataPerusahaan_${getFormattedNow()}.xlsx`);
+};
+
+
+  
   const columns = [
     {
       name: "Nama Perusahaan",
@@ -404,13 +408,21 @@ const AdminPerusahaanListPage = () => {
                   + Tambah Perusahaan
                 </button>
               </Link>
+              
             )}
+
+            <Link to="/user/perusahaan/import">
+                <button className="bg-green-600 hover:bg-green-700 text-white font-semibold lg:px-4 py-2 px-2 rounded">
+                  IMPORT
+                </button>
+              </Link>
             <button
               onClick={() => setShowExportModal(true)}
               className="bg-blue-600 hover:bg-blue-700 text-white font-semibold lg:px-4 px-2 py-2 rounded"
             >
               Export
             </button>
+           
           </div>
         </div>
 

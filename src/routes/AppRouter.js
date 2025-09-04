@@ -22,6 +22,7 @@ import Galeri from "../pages/user/Galeri.js";
 import UserPerusahaan from "../pages/user/perusahaan/index.js";
 import UserTambahPerusahaan from "../pages/user/perusahaan/TambahPerusahaanPage.js";
 import UserEditPerusahaan from "../pages/user/perusahaan/EditPerusahaanPage.js";
+import UserImportPerusahaan from "../pages/user/perusahaan/import.js";
 
 import UserPekerjaanFisik from "../pages/user/pekerjaanfisik/index.js";
 import TambahPekerjaanFisikPage from "../pages/user/pekerjaanfisik/TambahPekerjaanFisikPage.js";
@@ -64,6 +65,7 @@ const AppRouter = () => {
           <Route path="/user/ganti-password" element={<GantiPassword />} />
           <Route path="/user/perusahaan" element={<UserPerusahaan />} />
           <Route path="/user/perusahaan/tambah" element={<UserTambahPerusahaan />} />
+          <Route path="/user/perusahaan/import" element={<UserImportPerusahaan />} />
           <Route path="/user/perusahaan/edit/:id" element={<UserEditPerusahaan />} />
           <Route path="/user/galeri" element={<Galeri />} />
 
