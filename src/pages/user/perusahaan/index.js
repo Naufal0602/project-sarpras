@@ -37,6 +37,7 @@ const AdminPerusahaanListPage = () => {
   const [openModal, setOpenModal] = useState(false);
   const [selectedPerusahaanId, setSelectedPerusahaanId] = useState(null);
   const [successToast, setSuccessToast] = useState(false);
+  
 
   const handleShowPekerjaanModal = (perusahaan) => {
     setSelectedPerusahaan(perusahaan);

@@ -49,12 +49,13 @@ const AdminPekerjaanFisikListPage = () => {
   const [judulModal, setJudulModal] = useState("");
   const [zoomImageUrl, setZoomImageUrl] = useState(null);
   const navigate = useNavigate();
-  const [activeImageId, setActiveImageId] = useState(null);
   const [openModal, setOpenModal] = useState(false);
   const [selectedPekerjaanId, setSelectedPekerjaanId] = useState(null);
   const [successToast, setSuccessToast] = useState(false);
   const [openDeleteGambarModal, setOpenDeleteGambarModal] = useState(false);
   const [selectedGambar, setSelectedGambar] = useState(null);
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [openDeleteSelectedModal, setOpenDeleteSelectedModal] = useState(false);
 
   const bagianUser = role?.includes("user-")
     ? role.replace("user-", "")
@@ -77,6 +78,12 @@ const AdminPekerjaanFisikListPage = () => {
     }
 
     return data;
+  };
+
+  const toggleSelectImage = (id) => {
+    setSelectedImages((prev) =>
+      prev.includes(id) ? prev.filter((imgId) => imgId !== id) : [...prev, id]
+    );
   };
 
   const handleZoom = (url) => {
@@ -519,7 +526,7 @@ const AdminPekerjaanFisikListPage = () => {
     );
 
   if (loading) {
-    return <Loading text="Mengupdate..." />;
+    return <Loading text="Loading..." />;
   }
 
   return (
@@ -643,11 +650,6 @@ const AdminPekerjaanFisikListPage = () => {
                         <div
                           key={index}
                           className="border rounded overflow-hidden relative group cursor-pointer"
-                          onClick={() =>
-                            setActiveImageId((prev) =>
-                              prev === item.id ? null : item.id
-                            )
-                          }
                         >
                           {/* Gambar */}
                           <img
@@ -661,19 +663,29 @@ const AdminPekerjaanFisikListPage = () => {
                             {item.keterangan || "-"}
                           </p>
 
-                          {/* Overlay saat hover dan klik */}
-
+                          <div
+                            className="absolute top-2 left-2 z-20"
+                            onClick={(e) => e.stopPropagation()} // supaya gak trigger overlay
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedImages.includes(item.id)}
+                              onClick={() => toggleSelectImage(item.id)}
+                              readOnly // supaya React gak warning karena controlled input
+                              className="w-4 h-4 accent-blue-600"
+                            />
+                          </div>
+                          {/* Overlay saat hover */}
                           <div
                             className={`
-                                absolute top-0 left-0 w-full h-full
-                                bg-black bg-opacity-40 backdrop-blur-sm
-                                items-center justify-center gap-2
-                                hidden group-hover:flex
-                                ${activeImageId === item.id ? "flex" : ""}
-                                transition-all duration-300 z-10
-                              `}
+      absolute top-0 left-0 w-full h-full
+      bg-black bg-opacity-40 backdrop-blur-sm
+      items-center justify-center gap-2
+      hidden group-hover:flex
+      transition-all duration-300 z-10
+    `}
                           >
-                            {/* Tombol Zoom (tetap muncul semua level) */}
+                            {/* Tombol Zoom */}
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -685,52 +697,45 @@ const AdminPekerjaanFisikListPage = () => {
                               <Fullscreen />
                             </button>
 
-                            {/* pakai spread array untuk tombol lain */}
-                            {[
-                              ...(isLevel2
-                                ? [
-                                    <button
-                                      key="thumb"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleSetThumbnail(
-                                          item.id_pekerjaan,
-                                          item.id
-                                        );
-                                      }}
-                                      className="bg-green-500 text-white p-2 rounded shadow hover:bg-green-600"
-                                      title="Jadikan Thumbnail"
-                                    >
-                                      <GalleryThumbnails />
-                                    </button>,
-
-                                    <button
-                                      key="edit"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleEditGambar(item.id);
-                                      }}
-                                      className="bg-blue-500 text-white p-2 rounded shadow hover:bg-blue-600"
-                                      title="Edit Keterangan"
-                                    >
-                                      <PencilLine />
-                                    </button>,
-
-                                    <button
-                                      key="delete"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setSelectedGambar(item); // simpan gambar yang dipilih
-                                        setOpenDeleteGambarModal(true); // buka modal
-                                      }}
-                                      className="bg-red-600 text-white p-2 rounded shadow hover:bg-red-700"
-                                      title="Hapus Gambar"
-                                    >
-                                      <Trash2 />
-                                    </button>,
-                                  ]
-                                : []),
-                            ]}
+                            {/* Tombol lain */}
+                            {isLevel2 && (
+                              <>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleSetThumbnail(
+                                      item.id_pekerjaan,
+                                      item.id
+                                    );
+                                  }}
+                                  className="bg-green-500 text-white p-2 rounded shadow hover:bg-green-600"
+                                  title="Jadikan Thumbnail"
+                                >
+                                  <GalleryThumbnails />
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleEditGambar(item.id);
+                                  }}
+                                  className="bg-blue-500 text-white p-2 rounded shadow hover:bg-blue-600"
+                                  title="Edit Keterangan"
+                                >
+                                  <PencilLine />
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedGambar(item);
+                                    setOpenDeleteGambarModal(true);
+                                  }}
+                                  className="bg-red-600 text-white p-2 rounded shadow hover:bg-red-700"
+                                  title="Hapus Gambar"
+                                >
+                                  <Trash2 />
+                                </button>
+                              </>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -743,12 +748,26 @@ const AdminPekerjaanFisikListPage = () => {
                 </div>
                 {/* Tombol Tambah Gambar */}
                 <div className="absolute bottom-4 right-4 p-2">
-                  <Link
-                    to={`/user/pekerjaan-fisik/galeri/tambah/${selectedData?.id}`}
-                    className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded shadow"
-                  >
-                    + Tambah Gambar
-                  </Link>
+                  {selectedImages.length > 0 ? (
+                    <button
+                      onClick={() => setOpenDeleteSelectedModal(true)}
+                      className="bg-red-600 hover:bg-red-700 text-white text-sm px-4 py-2 rounded shadow flex items-center gap-2"
+                      disabled={loading}
+                    >
+                      {loading ? (
+                        <span className="animate-spin border-2 border-white border-t-transparent rounded-full w-4 h-4"></span>
+                      ) : (
+                        "Hapus Semua"
+                      )}
+                    </button>
+                  ) : (
+                    <Link
+                      to={`/user/pekerjaan-fisik/galeri/tambah/${selectedData?.id}`}
+                      className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded shadow"
+                    >
+                      + Tambah Gambar
+                    </Link>
+                  )}
                 </div>
               </div>
             </div>
@@ -765,6 +784,88 @@ const AdminPekerjaanFisikListPage = () => {
               alt="Zoom Gambar"
               className="max-w-3xl max-h-[80vh] object-contain rounded shadow-lg"
             />
+          </div>
+        )}
+
+        {openDeleteSelectedModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-80 shadow-lg text-center">
+              <h2 className="text-lg font-semibold mb-4">
+                Hapus {selectedImages.length} gambar terpilih?
+              </h2>
+              <div className="flex justify-center gap-4">
+                <button
+                  onClick={() => setOpenDeleteSelectedModal(false)}
+                  className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400"
+                  disabled={loading}
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={async () => {
+                    setLoading(true);
+                    try {
+                      for (const id of selectedImages) {
+                        const docRef = doc(db, "galeri", id);
+                        const docSnap = await getDoc(docRef);
+
+                        if (docSnap.exists()) {
+                          const data = docSnap.data();
+
+                          // ✅ hapus dari Cloudinary jika ada public_id
+                          if (data?.public_id) {
+                            try {
+                              const res = await axios.post(
+                                "https://be-sarpras.vercel.app/api/cloudinary/",
+                                {
+                                  public_id: [data.public_id],
+                                }
+                              );
+                              console.log(
+                                "✅ Respons hapus Cloudinary:",
+                                res.data
+                              );
+                            } catch (cloudErr) {
+                              console.error(
+                                "❌ Gagal hapus dari Cloudinary:",
+                                cloudErr
+                              );
+                            }
+                          } else {
+                            console.warn(
+                              `⚠️ Tidak ada public_id untuk gambar ${id}`
+                            );
+                          }
+                        }
+
+                        // ✅ hapus dokumen di Firestore
+                        await deleteDoc(docRef);
+                      }
+
+                      // update state list gambar
+                      setGambarList((prev) =>
+                        prev.filter((g) => !selectedImages.includes(g.id))
+                      );
+
+                      setSelectedImages([]);
+                      setOpenDeleteSelectedModal(false);
+
+                      // ✅ tampilkan success
+                      setSuccessToast(true);
+                    } catch (err) {
+                      console.error("Gagal hapus:", err);
+                      alert("Terjadi kesalahan saat menghapus gambar.");
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                  className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700"
+                  disabled={loading}
+                >
+                  Hapus
+                </button>
+              </div>
+            </div>
           </div>
         )}
 

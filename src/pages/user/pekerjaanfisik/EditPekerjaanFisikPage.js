@@ -103,7 +103,7 @@ const EditPekerjaanFisikPage = () => {
   };
 
   if (loading) {
-    return <Loading text="Mengupdate..." />;
+    return <Loading text="Loading..." />;
   }
 
   return (

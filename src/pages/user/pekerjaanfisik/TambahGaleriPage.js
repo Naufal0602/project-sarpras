@@ -27,21 +27,19 @@ export default function UploadForm() {
   const [cameraOpen, setCameraOpen] = useState(false);
   const [photoTaken, setPhotoTaken] = useState(false); // ✅ status notif ambil foto
 
-
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const [cameraMode, setCameraMode] = useState("environment");
 
   // 🎥 buka kamera
-  const startCamera = async () => {
+  const startCamera = async (mode = cameraMode) => {
     try {
-      // hentikan stream lama kalau ada
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
       }
 
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: cameraMode },
+        video: { facingMode: mode },
       });
       streamRef.current = stream;
       videoRef.current.srcObject = stream;
@@ -51,8 +49,28 @@ export default function UploadForm() {
     }
   };
 
-  const toggleCamera = () => {
-    setCameraMode((prev) => (prev === "user" ? "environment" : "user"));
+  const toggleCamera = async () => {
+    try {
+      // stop stream lama dulu
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+      }
+
+      // ubah mode kamera
+      setCameraMode((prev) => {
+        const newMode = prev === "user" ? "environment" : "user";
+
+        // tunggu state update lalu buka ulang kamera
+        setTimeout(() => {
+          startCamera(newMode);
+        }, 200);
+
+        return newMode;
+      });
+    } catch (err) {
+      console.error("Gagal ganti kamera:", err);
+      alert("Tidak bisa ganti kamera.");
+    }
   };
 
   // 📸 ambil foto dari video -> canvas
@@ -141,7 +159,7 @@ export default function UploadForm() {
   };
 
   if (loading) {
-    return <Loading text="Mengupdate..." />;
+    return <Loading text="Loading..." />;
   }
 
   return (
