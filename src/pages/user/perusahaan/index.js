@@ -219,20 +219,20 @@ const AdminPerusahaanListPage = () => {
       },
     });
 
-     const fileName = `DataPerusahaan_${new Date().getTime()}.pdf`;
+    const fileName = `DataPerusahaan_${new Date().getTime()}.pdf`;
 
-  // Kalau ada AndroidInterface (berarti dibuka lewat APK)
-  if (window.AndroidInterface) {
-    const pdfBase64 = doc.output("datauristring");
-    window.AndroidInterface.savePDF(pdfBase64, fileName);
-  } else {
-    // Kalau dibuka di browser biasa
-    doc.save(fileName);}
+    // Kalau ada AndroidInterface (berarti dibuka lewat APK)
+    if (window.AndroidInterface) {
+      const pdfBase64 = doc.output("datauristring");
+      window.AndroidInterface.savePDF(pdfBase64, fileName);
+    } else {
+      doc.save(fileName); // browser biasa
+    }
   };
 
   const exportToExcel = () => {
     const data = getExportData().map((row) => ({
-      ID: row.id || "-", // tambahkan kolom ID
+      ID: row.id || "-",
       "Nama Perusahaan": row.nama_perusahaan || "-",
       Direktur: row.direktur || "-",
       Alamat: row.alamat || "-",
@@ -244,15 +244,26 @@ const AdminPerusahaanListPage = () => {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Perusahaan");
 
+    // Export Excel ke Base64
     const excelBuffer = XLSX.write(workbook, {
       bookType: "xlsx",
-      type: "array",
+      type: "base64",
     });
+    const fileName = `DataPerusahaan_${getFormattedNow()}.xlsx`;
 
-    const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
-    saveAs(blob, `DataPerusahaan_${getFormattedNow()}.xlsx`);
+    if (window.AndroidInterface) {
+      window.AndroidInterface.saveExcel(excelBuffer, fileName);
+    } else {
+      // browser biasa
+      const blob = new Blob(
+        [Uint8Array.from(atob(excelBuffer), (c) => c.charCodeAt(0))],
+        {
+          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        }
+      );
+      saveAs(blob, fileName);
+    }
   };
-
 
   const columns = [
     {
