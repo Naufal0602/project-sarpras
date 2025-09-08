@@ -38,11 +38,12 @@ const ImportPekerjaanFisikPage = () => {
 
     setUploading(true);
 
+
     try {
       for (const row of excelData) {
         // 1. Simpan pekerjaan fisik
         const pekerjaanRef = await addDoc(collection(db, "pekerjaan_fisik"), {
-          perusahaan_id: row["Id Perusahaan"] || "-",
+          perusahaan_id: row["id_perusahaan"] || "-",
           jenis_pekerjaan: row["Kegiatan"] || "-",
           pekerjaan: row["Sub Kegiatan"] || "-",
           deskripsi: row["Paket Pekerjaan"] || "-",

@@ -57,6 +57,34 @@ const AdminPekerjaanFisikListPage = () => {
   const [selectedImages, setSelectedImages] = useState([]);
   const [openDeleteSelectedModal, setOpenDeleteSelectedModal] = useState(false);
 
+  const handleDeleteAll = async () => {
+  if (!window.confirm("⚠️ Yakin ingin menghapus SEMUA data pekerjaan fisik?")) {
+    return;
+  }
+
+  try {
+    setLoading(true);
+
+    // Ambil semua dokumen pekerjaan_fisik
+    const snapshot = await getDocs(collection(db, "pekerjaan_fisik"));
+
+    // Hapus satu per satu
+    for (const pekerjaanDoc of snapshot.docs) {
+      await deleteDoc(doc(db, "pekerjaan_fisik", pekerjaanDoc.id));
+    }
+
+    // Kosongkan state list
+    setPekerjaanList([]);
+    setSuccessToast(true);
+    console.log("✅ Semua data pekerjaan fisik terhapus.");
+  } catch (err) {
+    console.error("❌ Gagal hapus semua data:", err);
+    alert("Terjadi kesalahan saat menghapus semua data.");
+  } finally {
+    setLoading(false);
+  }
+};
+
   const bagianUser = role?.includes("user-")
     ? role.replace("user-", "")
     : "semua"; // admin lihat semua
@@ -556,6 +584,13 @@ const AdminPekerjaanFisikListPage = () => {
               >
                 Export
               </button>
+               <button
+    onClick={handleDeleteAll}
+    className="bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded"
+    disabled={loading}
+  >
+    {loading ? "Menghapus..." : "Hapus Semua"}
+  </button>
             </div>
           </div>
 

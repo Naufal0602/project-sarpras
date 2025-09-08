@@ -37,7 +37,6 @@ const AdminPerusahaanListPage = () => {
   const [openModal, setOpenModal] = useState(false);
   const [selectedPerusahaanId, setSelectedPerusahaanId] = useState(null);
   const [successToast, setSuccessToast] = useState(false);
-  
 
   const handleShowPekerjaanModal = (perusahaan) => {
     setSelectedPerusahaan(perusahaan);
@@ -93,7 +92,7 @@ const AdminPerusahaanListPage = () => {
           console.log("✅ Respons hapus Cloudinary:", res.data);
         } else {
           console.warn("⚠️ Tidak ada foto_kantor.public_id di data");
-          console.log("Data perusahaan:", data);  
+          console.log("Data perusahaan:", data);
         }
       } else {
         console.warn("⚠️ Dokumen tidak ditemukan:", perusahaanId);
@@ -104,12 +103,10 @@ const AdminPerusahaanListPage = () => {
       setPerusahaanList((prev) =>
         prev.filter((perusahaan) => perusahaan.id !== perusahaanId)
       );
-
     } catch (error) {
       console.error("❌ Gagal menghapus perusahaan:", error);
       alert("Gagal menghapus perusahaan.");
-    }
-    finally {
+    } finally {
       setLoading(false);
       setSuccessToast(true);
     }
@@ -222,34 +219,41 @@ const AdminPerusahaanListPage = () => {
       },
     });
 
-    doc.save(`DataPerusahaan_${new Date().getTime()}.pdf`);
+     const fileName = `DataPerusahaan_${new Date().getTime()}.pdf`;
+
+  // Kalau ada AndroidInterface (berarti dibuka lewat APK)
+  if (window.AndroidInterface) {
+    const pdfBase64 = doc.output("datauristring");
+    window.AndroidInterface.savePDF(pdfBase64, fileName);
+  } else {
+    // Kalau dibuka di browser biasa
+    doc.save(fileName);}
   };
 
   const exportToExcel = () => {
-  const data = getExportData().map((row) => ({
-    ID: row.id || "-", // tambahkan kolom ID
-    "Nama Perusahaan": row.nama_perusahaan || "-",
-    Direktur: row.direktur || "-",
-    Alamat: row.alamat || "-",
-    Status: row.status || "-",
-    Dibuat: formatDate(row.created_at),
-  }));
+    const data = getExportData().map((row) => ({
+      ID: row.id || "-", // tambahkan kolom ID
+      "Nama Perusahaan": row.nama_perusahaan || "-",
+      Direktur: row.direktur || "-",
+      Alamat: row.alamat || "-",
+      Status: row.status || "-",
+      Dibuat: formatDate(row.created_at),
+    }));
 
-  const worksheet = XLSX.utils.json_to_sheet(data);
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Perusahaan");
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Perusahaan");
 
-  const excelBuffer = XLSX.write(workbook, {
-    bookType: "xlsx",
-    type: "array",
-  });
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array",
+    });
 
-  const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
-  saveAs(blob, `DataPerusahaan_${getFormattedNow()}.xlsx`);
-};
+    const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
+    saveAs(blob, `DataPerusahaan_${getFormattedNow()}.xlsx`);
+  };
 
 
-  
   const columns = [
     {
       name: "Nama Perusahaan",
@@ -388,11 +392,11 @@ const AdminPerusahaanListPage = () => {
         <Navbar />
         <Sidebar />
         <SuccessFullScreen
-            className="fixed inset-0 flex  z-50"
-            show={successToast}
-            message="Data Berhasil Dihapus"
-            onDone={() => setSuccessToast(false)}
-          />
+          className="fixed inset-0 flex  z-50"
+          show={successToast}
+          message="Data Berhasil Dihapus"
+          onDone={() => setSuccessToast(false)}
+        />
       </div>
 
       {/* Konten utama */}
@@ -408,7 +412,7 @@ const AdminPerusahaanListPage = () => {
                 <button className="bg-green-600 hover:bg-green-700 text-white font-semibold lg:px-4 py-2 px-2 rounded">
                   + Tambah Perusahaan
                 </button>
-              </Link>  
+              </Link>
             )}
             <button
               onClick={() => setShowExportModal(true)}
@@ -416,7 +420,6 @@ const AdminPerusahaanListPage = () => {
             >
               Export
             </button>
-           
           </div>
         </div>
 
