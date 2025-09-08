@@ -39,7 +39,11 @@ export default function UploadForm() {
       }
 
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: mode },
+        video: {
+          facingMode: mode,
+          width: { ideal: 640 }, // resolusi lebih kecil
+          height: { ideal: 480 }, // resolusi lebih kecil
+        },
       });
       streamRef.current = stream;
       videoRef.current.srcObject = stream;
@@ -267,7 +271,9 @@ export default function UploadForm() {
             {/* PREVIEW VIDEO */}
             <video
               ref={videoRef}
-              className="w-full h-48 bg-black rounded-md mb-4"
+              className={`w-full aspect-[4/3] bg-black rounded-md mb-4 object-cover ${
+                cameraMode === "user" ? "scale-x-[-1]" : ""
+              }`}
               autoPlay
               muted
             />
