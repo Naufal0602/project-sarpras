@@ -15,7 +15,6 @@ import { Link } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import { PencilLine, Trash2, MapPin, FileText } from "lucide-react";
 import * as XLSX from "xlsx";
-import { saveAs } from "file-saver";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import Loading from "../../../components/Loading.js";
@@ -244,25 +243,24 @@ const AdminPerusahaanListPage = () => {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Perusahaan");
 
-    // Export Excel ke Base64
     const excelBuffer = XLSX.write(workbook, {
       bookType: "xlsx",
-      type: "base64",
+      type: "array",
+    });
+    const blob = new Blob([excelBuffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     });
     const fileName = `DataPerusahaan_${getFormattedNow()}.xlsx`;
 
-    if (window.AndroidInterface) {
-      window.AndroidInterface.saveExcel(excelBuffer, fileName);
-    } else {
-      // browser biasa
-      const blob = new Blob(
-        [Uint8Array.from(atob(excelBuffer), (c) => c.charCodeAt(0))],
-        {
-          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        }
-      );
-      saveAs(blob, fileName);
-    }
+    // WebView Android bisa handle download ini lewat DownloadListener
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const columns = [
