@@ -138,97 +138,133 @@ const AdminPekerjaanFisikListPage = () => {
     );
   };
 
-  const exportToPDF = () => {
-    const exportData = getFilteredExportData();
-    const doc = new jsPDF();
+const exportToPDF = () => {
+  const doc = new jsPDF("p", "mm", "a4");
 
-    const now = new Date();
-    const formattedDate = now.toLocaleDateString("id-ID", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
+  const tanggalCetak = new Date();
+  const formattedTanggal = tanggalCetak.toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
 
-    // Judul dan tanggal cetak
-    // Judul di tengah
-    doc.setFontSize(16);
-    doc.setTextColor(255, 87, 34); // orange-400
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const title = "Laporan Pekerjaan Fisik";
-    const textWidth = doc.getTextWidth(title);
-    const x = (pageWidth - textWidth) / 2;
-    doc.text(title, x, 15);
+  // === Header ===
+  doc.setFontSize(16);
+  doc.setTextColor(33, 33, 33);
+  doc.text("LAPORAN PEKERJAAN FISIK", 105, 20, { align: "center" });
 
-    doc.setFontSize(10);
-    doc.setTextColor(0, 0, 0);
-    doc.text(`Tanggal Dicetak: ${formattedDate}`, 14, 22);
+  doc.setFontSize(10);
+  doc.setTextColor(100);
+  doc.text(`Dicetak pada: ${formattedTanggal}`, 105, 27, { align: "center" });
 
-    const tableColumn = [
+  // === Tabel Data ===
+  autoTable(doc, {
+    startY: 35,
+    head: [[
+      "No",
       "Perusahaan",
       "Jenis Pekerjaan",
       "Pekerjaan",
       "Deskripsi",
-      "Tanggal",
-    ];
-
-    const tableRows = exportData.map((row) => [
+      "Tanggal"
+    ]],
+    body: getFilteredExportData().map((row, index) => [
+      index + 1,
       row.perusahaan_nama || "-",
       row.jenis_pekerjaan || "-",
       row.pekerjaan || "-",
       row.deskripsi || "-",
       row.tanggal_pekerjaan || "-",
-    ]);
+    ]),
+    theme: "grid",
+    headStyles: {
+      fillColor: [249, 115, 22], // orange-500
+      textColor: [255, 255, 255],
+      halign: "center",
+    },
+    styles: {
+      fontSize: 9,
+      cellPadding: 3,
+    },
+    bodyStyles: {
+      textColor: [33, 33, 33],
+    },
+  });
 
-    autoTable(doc, {
-      head: [tableColumn],
-      body: tableRows,
-      startY: 28,
-      styles: {
-        fontSize: 8,
-      },
-      headStyles: {
-        fillColor: [255, 160, 0], // Tailwind orange-400 => RGB
-        textColor: 255,
-        halign: "center",
-      },
-      bodyStyles: {
-        valign: "top",
-      },
-      columnStyles: {
-        0: { cellWidth: 35 },
-        1: { cellWidth: 35 },
-        2: { cellWidth: 25 },
-        3: { cellWidth: 40 },
-        4: { cellWidth: 25 },
-        5: { cellWidth: 25 },
-      },
+  const fileName = `LaporanPekerjaanFisik_${getFormattedNowExport()}.pdf`;
+
+
+  // === Cek Android Interface ===
+  if (window.AndroidInterface) {
+    const pdfBase64 = doc.output("datauristring"); 
+    window.AndroidInterface.savePDF(pdfBase64, fileName);
+  } else {
+    doc.save(fileName); // fallback browser biasa
+  }
+
+  setShowExportModal(false);
+};
+
+
+
+const exportToExcel = () => {
+  const data = getFilteredExportData().map((row, index) => ({
+    No: index + 1,
+    Perusahaan: row.perusahaan_nama || "-",
+    "Jenis Pekerjaan": row.jenis_pekerjaan || "-",
+    Pekerjaan: row.pekerjaan || "-",
+    Deskripsi: row.deskripsi || "-",
+    Tanggal: row.tanggal_pekerjaan || "-",
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Pekerjaan Fisik");
+
+  const excelBuffer = XLSX.write(workbook, {
+    bookType: "xlsx",
+    type: "base64", // penting untuk AndroidInterface
+  });
+
+  const fileName = `DataPekerjaanFisik_${getFormattedNow()}.xlsx`;
+
+  // === Cek Android Interface ===
+  if (window.AndroidInterface) {
+    window.AndroidInterface.saveExcel(excelBuffer, fileName);
+  } else {
+    // fallback browser biasa
+    const blob = new Blob([s2ab(atob(excelBuffer))], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     });
+    saveAs(blob, fileName);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
 
-    doc.save(`LaporanPekerjaanFisik_${getFormattedNow()}.pdf`);
-    setShowExportModal(false);
-  };
+  setShowExportModal(false);
+};
 
-  const exportToExcel = () => {
-    const exportData = getFilteredExportData().map((row) => ({
-      Perusahaan: row.perusahaan_nama || "-",
-      Jenis_Pekerjaan: row.jenis_pekerjaan || "-",
-      pekerjaan: row.pekerjaan || "-",
-      Deskripsi: row.deskripsi || "-",
-      Tanggal: row.tanggal_pekerjaan || "-",
-    }));
 
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Pekerjaan Fisik");
 
-    const excelBuffer = XLSX.write(workbook, {
-      bookType: "xlsx",
-      type: "array",
-    });
-    const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
-    saveAs(blob, `DataPekerjaanFisik_${getFormattedNow()}.xlsx`);
-    setShowExportModal(false);
-  };
+function s2ab(s) {
+  const buf = new ArrayBuffer(s.length);
+  const view = new Uint8Array(buf);
+  for (let i = 0; i < s.length; i++) view[i] = s.charCodeAt(i) & 0xff;
+  return buf;
+}
+
+function getFormattedNowExport() {
+  const d = new Date();
+  return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}_${String(d.getHours()).padStart(2, "0")}${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+
 
   const fetchPekerjaan = async () => {
     try {
