@@ -229,30 +229,35 @@ const AdminPerusahaanListPage = () => {
     }
   };
 
-  const exportToExcel = () => {
-    const data = getExportData().map((row) => ({
-      ID: row.id || "-",
-      "Nama Perusahaan": row.nama_perusahaan || "-",
-      Direktur: row.direktur || "-",
-      Alamat: row.alamat || "-",
-      Status: row.status || "-",
-      Dibuat: formatDate(row.created_at),
-    }));
+ const exportToExcel = () => {
+  const data = getExportData().map((row) => ({
+    ID: row.id || "-",
+    "Nama Perusahaan": row.nama_perusahaan || "-",
+    Direktur: row.direktur || "-",
+    Alamat: row.alamat || "-",
+    Status: row.status || "-",
+    Dibuat: formatDate(row.created_at),
+  }));
 
-    const worksheet = XLSX.utils.json_to_sheet(data);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Perusahaan");
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Perusahaan");
 
-    const excelBuffer = XLSX.write(workbook, {
-      bookType: "xlsx",
-      type: "array",
-    });
-    const blob = new Blob([excelBuffer], {
+  const excelBuffer = XLSX.write(workbook, {
+    bookType: "xlsx",
+    type: "base64", // ⚠️ jangan array, pakai base64
+  });
+
+  const fileName = `DataPerusahaan_${getFormattedNow()}.xlsx`;
+
+  // Kalau jalan di WebView Android → lempar ke AndroidInterface
+  if (window.AndroidInterface) {
+    window.AndroidInterface.saveExcel(excelBuffer, fileName);
+  } else {
+    // fallback kalau di browser biasa
+    const blob = new Blob([s2ab(atob(excelBuffer))], {
       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     });
-    const fileName = `DataPerusahaan_${getFormattedNow()}.xlsx`;
-
-    // WebView Android bisa handle download ini lewat DownloadListener
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -261,7 +266,17 @@ const AdminPerusahaanListPage = () => {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  };
+  }
+};
+
+// helper untuk convert string → ArrayBuffer (fallback download)
+function s2ab(s) {
+  const buf = new ArrayBuffer(s.length);
+  const view = new Uint8Array(buf);
+  for (let i = 0; i < s.length; i++) view[i] = s.charCodeAt(i) & 0xff;
+  return buf;
+}
+
 
   const columns = [
     {
