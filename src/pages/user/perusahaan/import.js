@@ -38,7 +38,6 @@ const ImportPekerjaanFisikPage = () => {
 
     setUploading(true);
 
-
     try {
       for (const row of excelData) {
         // 1. Simpan pekerjaan fisik
@@ -47,7 +46,7 @@ const ImportPekerjaanFisikPage = () => {
           jenis_pekerjaan: row["Kegiatan"] || "-",
           pekerjaan: row["Sub Kegiatan"] || "-",
           deskripsi: row["Paket Pekerjaan"] || "-",
-          bagian: (row["Bagian"] || "-").toLowerCase(),
+          bagian: (row["bagian"] || "-").toLowerCase(),
           tanggal_pekerjaan: row["Tanggal"] || null,
           created_at: serverTimestamp(),
           updated_at: serverTimestamp(),
@@ -55,17 +54,15 @@ const ImportPekerjaanFisikPage = () => {
 
         const pekerjaanId = pekerjaanRef.id;
 
-        // 2. Simpan ke galeri (kalau ada URL)
-        if (row["url"]) {
-          await addDoc(collection(db, "galeri"), {
-            id_pekerjaan: pekerjaanId,
-            url_gambar: row["url"],
-            public_id: row["public_id"] || "",
-            keterangan: row["keterangan"] || "",
-            created_at: serverTimestamp(),
-            thumbnail: true, // defaultin satu jadi thumbnail
-          });
-        }
+        // 2. Simpan ke galeri (selalu buat dokumen, walaupun tidak ada URL)
+        await addDoc(collection(db, "galeri"), {
+          id_pekerjaan: pekerjaanId,
+          url_gambar: row["secure_url"] || "", // kalau kosong tetap tersimpan ""
+          public_id: row["public_id"] || "",
+          keterangan: row["keterangan"] || "",
+          created_at: serverTimestamp(),
+          thumbnail: true, // defaultin satu jadi thumbnail
+        });
       }
 
       alert("Data berhasil diimport ke Firestore!");
