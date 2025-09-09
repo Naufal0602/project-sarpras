@@ -18,7 +18,7 @@ const ImportPekerjaanFisikPage = () => {
       const data = new Uint8Array(event.target.result);
       const workbook = XLSX.read(data, { type: "array", cellDates: true });
 
-      const sheetName = "Pekerjaan";
+      const sheetName = "Sheet1";
       const sheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {
         raw: false, // biar serial Excel otomatis jadi string tanggal
       });
@@ -38,16 +38,17 @@ const ImportPekerjaanFisikPage = () => {
 
     setUploading(true);
 
+
     try {
       for (const row of excelData) {
         // 1. Simpan pekerjaan fisik
         const pekerjaanRef = await addDoc(collection(db, "pekerjaan_fisik"), {
-          perusahaan_id: row["id_perusahaan"] || "-",
-          jenis_pekerjaan: row["Kegiatan"] || "-",
-          pekerjaan: row["Sub Kegiatan"] || "-",
-          deskripsi: row["Paket Pekerjaan"] || "-",
-          bagian: (row["bagian"] || "-").toLowerCase(),
-          tanggal_pekerjaan: row["Tanggal"] || null,
+          perusahaan_id: row["Id Perusahaan"] || "-",
+          jenis_pekerjaan: row["Jenis Pekerjaan"] || "-",
+          pekerjaan: row["Pekerjaan"] || "-",
+          deskripsi: row["Deskripsi"] || "-",
+          bagian: (row["Bagian"] || "-").toLowerCase(),
+          tanggal_pekerjaan: row["Mulai"] || null,
           created_at: serverTimestamp(),
           updated_at: serverTimestamp(),
         });

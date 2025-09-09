@@ -390,14 +390,14 @@ function getFormattedNowExport() {
 
   console.log("SUCCSESTOAST", successToast);
 
-  const formatDate = (timestamp) => {
-    if (!timestamp) return "-";
-    return timestamp.toDate?.().toLocaleDateString("id-ID", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-  };
+  // const formatDate = (timestamp) => {
+  //   if (!timestamp) return "-";
+  //   return timestamp.toDate?.().toLocaleDateString("id-ID", {
+  //     day: "2-digit",
+  //     month: "2-digit",
+  //     year: "numeric",
+  //   });
+  // };
 
   const handleDeleteGambar = async (item) => {
     try {
@@ -674,7 +674,7 @@ function getFormattedNowExport() {
                     </p>
                     <p>
                       <span className="font-semibold">Tanggal Dibuat:</span>{" "}
-                      {formatDate(selectedData?.created_at)}
+                      {selectedData?.tanggal_pekerjaan}
                     </p>
                     {/* Tambahkan informasi lain sesuai kebutuhan */}
                   </div>
