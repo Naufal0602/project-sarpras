@@ -1,6 +1,13 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { collection, getDocs, query, where, doc, getDoc } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  doc,
+  getDoc,
+} from "firebase/firestore";
 import { db } from "../services/firebase";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
@@ -32,22 +39,22 @@ const LandingPage = () => {
   }, [auth]);
 
   useEffect(() => {
-  const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
-    setUser(currentUser);
+    const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
+      setUser(currentUser);
 
-    if (currentUser) {
-      // ambil role user dari Firestore
-      const userDoc = await getDoc(doc(db, "users", currentUser.uid));
-      if (userDoc.exists()) {
-        setRole(userDoc.data().role);
+      if (currentUser) {
+        // ambil role user dari Firestore
+        const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+        if (userDoc.exists()) {
+          setRole(userDoc.data().role);
+        }
+      } else {
+        setRole(null); // reset kalau logout
       }
-    } else {
-      setRole(null); // reset kalau logout
-    }
-  });
+    });
 
-  return () => unsubscribe();
-}, [auth]);
+    return () => unsubscribe();
+  }, [auth]);
 
   useEffect(() => {
     const fetchYears = async () => {
@@ -58,13 +65,22 @@ const LandingPage = () => {
         const yearSet = new Set();
 
         snapshotPekerjaan.forEach((doc) => {
-          const createdYear = doc.data().created_at?.toDate().getFullYear();
-          if (createdYear) {
-            yearSet.add(createdYear);
+          const data = doc.data();
+          let pekerjaanYear = null;
+
+          if (data.tanggal_pekerjaan) {
+            if (typeof data.tanggal_pekerjaan.toDate === "function") {
+              // Timestamp
+              pekerjaanYear = data.tanggal_pekerjaan.toDate().getFullYear();
+            } else {
+              // String atau tipe lain
+              pekerjaanYear = new Date(data.tanggal_pekerjaan).getFullYear();
+            }
           }
+
+          if (pekerjaanYear) yearSet.add(pekerjaanYear);
         });
 
-        // Urutkan tahun dari terbesar ke kecil
         const sortedYears = Array.from(yearSet).sort((a, b) => b - a);
         setAvailableYears(sortedYears);
       } catch (err) {
@@ -88,12 +104,23 @@ const LandingPage = () => {
         for (const docPekerjaan of snapshotPekerjaan.docs) {
           const pekerjaanId = docPekerjaan.id;
           const pekerjaanData = docPekerjaan.data();
-          const createdYear = pekerjaanData.created_at?.toDate().getFullYear();
+          let pekerjaanYear = null;
+
+          if (pekerjaanData.tanggal_pekerjaan) {
+            if (typeof pekerjaanData.tanggal_pekerjaan.toDate === "function") {
+              pekerjaanYear = pekerjaanData.tanggal_pekerjaan
+                .toDate()
+                .getFullYear();
+            } else {
+              pekerjaanYear = new Date(
+                pekerjaanData.tanggal_pekerjaan
+              ).getFullYear();
+            }
+          }
 
           // Filter tahun
-          if (selectedYear !== "all" && createdYear !== Number(selectedYear)) {
+          if (selectedYear !== "all" && pekerjaanYear !== Number(selectedYear))
             continue;
-          }
 
           const qGaleri = query(
             collection(db, "galeri"),
@@ -101,14 +128,14 @@ const LandingPage = () => {
             where("thumbnail", "==", true)
           );
           const snapshotGaleri = await getDocs(qGaleri);
-
           snapshotGaleri.forEach((docGaleri) => {
+            if (galeriData.length >= 10) return;
             galeriData.push({
               id: docGaleri.id,
               image: docGaleri.data().url_gambar,
               text: docGaleri.data().keterangan,
               id_pekerjaan: pekerjaanId,
-              created_year: createdYear,
+              created_year: pekerjaanYear, // ganti juga property ini
               pekerjaan: {
                 deskripsi: pekerjaanData.deskripsi,
                 id_perusahaan: pekerjaanData.id_perusahaan,
@@ -118,24 +145,24 @@ const LandingPage = () => {
         }
 
         // 🔥 filter berdasarkan role
-      let filteredGaleri = galeriData;
+        let filteredGaleri = galeriData;
 
-      if (user && role && role !== "admin") {
-        filteredGaleri = galeriData.filter(
-          (item) => item.pekerjaan?.bagian === role
-        );
+        if (user && role && role !== "admin") {
+          filteredGaleri = galeriData.filter(
+            (item) => item.pekerjaan?.bagian === role
+          );
+        }
+
+        setGaleri(filteredGaleri);
+      } catch (err) {
+        console.error("Gagal fetch data:", err);
+      } finally {
+        setLoading(false);
       }
+    };
 
-      setGaleri(filteredGaleri);
-    } catch (err) {
-      console.error("Gagal fetch data:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  fetchData();
-}, [selectedYear, user, role]); 
+    fetchData();
+  }, [selectedYear, user, role]);
 
   // Atur jumlah slide awal sesuai lebar layar
   useEffect(() => {
@@ -220,7 +247,8 @@ const LandingPage = () => {
           </div>
           <button
             className="border border-orange-500 text-black px-4 py-2 rounded hover:bg-orange-500 hover:text-white transition duration-200"
-            onClick={() => navigate("/login")}>
+            onClick={() => navigate("/login")}
+          >
             {user ? "Dashboard" : "Login"}
           </button>
         </div>
@@ -405,12 +433,12 @@ const LandingPage = () => {
                   <div
                     key={media.id}
                     onClick={() => handleImageClick(media)}
-                    className="flex justify-center items-center"
+                    className="flex justify-center items-center mt-8"
                     title={
                       media.pekerjaan?.deskripsi || console.log(media.pekerjaan)
                     }
                   >
-                    <div className="h-72 flex justify-center items-center flex-col">
+                    <div className="h-72 flex justify-center items-center flex-col mb-4">
                       <img
                         src={media.image}
                         alt={media.text}

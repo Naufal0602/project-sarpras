@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   collection,
   getDocs,
@@ -6,6 +6,9 @@ import {
   getDoc,
   query,
   where,
+  orderBy,
+  limit,
+  startAfter,
 } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { X, Fullscreen, ChevronDown } from "lucide-react"; // buat close modal
@@ -23,40 +26,76 @@ const Galeri = ({ role }) => {
   const [zoomImageUrl, setZoomImageUrl] = useState(null); // modal zoom
   const [availableYears, setAvailableYears] = useState([]); // daftar tahun
   const [selectedYear, setSelectedYear] = useState("all"); // tahun yang dipilih
+  const [lastDoc, setLastDoc] = useState(null); // simpan dokumen terakhir
+  const [hasMore, setHasMore] = useState(true); // apakah masih ada data
 
-  // Ambil daftar tahun
-  const fetchYears = async () => {
+  const PAGE_SIZE = 12; // jumlah per batch
+
+  // Ambil daftar tahun berdasarkan tanggal_pekerjaan
+  const fetchYears = useCallback(async () => {
+    console.log("📌 Mulai fetch daftar tahun...");
     try {
-      const snapshotPekerjaan = await getDocs(
-        collection(db, "pekerjaan_fisik")
+      const bagianUser = roleToBagian[role];
+      console.log("Bagian user:", bagianUser.toLowerCase());
+      const pekerjaanRef = collection(db, "pekerjaan_fisik");
+      const q = query(
+        pekerjaanRef,
+        where("bagian", "==", bagianUser.toLowerCase())
       );
+      const snapshotPekerjaan = await getDocs(q);
+
       const yearSet = new Set();
 
       snapshotPekerjaan.forEach((doc) => {
-        const createdYear = doc.data().created_at?.toDate().getFullYear();
-        if (createdYear) {
-          yearSet.add(createdYear);
+        const tanggalPekerjaan = doc.data().tanggal_pekerjaan;
+        if (tanggalPekerjaan) {
+          const parsedDate = new Date(tanggalPekerjaan);
+          if (!isNaN(parsedDate)) {
+            yearSet.add(parsedDate.getFullYear());
+          }
         }
       });
 
       const sortedYears = Array.from(yearSet).sort((a, b) => b - a);
       setAvailableYears(sortedYears);
+      console.log("✅ Tahun tersedia:", sortedYears);
     } catch (err) {
-      console.error("Gagal fetch tahun:", err);
+      console.error("❌ Gagal fetch tahun:", err);
     }
-  };
+  }, [role]);
 
-  useEffect(() => {
-    fetchYears();
-  }, []);
-
-  useEffect(() => {
-    const fetchPhotos = async () => {
+  const fetchPhotos = useCallback(
+    async (reset = true) => {
       try {
         setLoading(true);
+        console.log(reset ? "📌 Fetch foto awal..." : "🔄 Load more foto...");
+
         const galeriRef = collection(db, "galeri");
-        const galeriQuery = query(galeriRef, where("thumbnail", "==", true));
+        let galeriQuery = query(
+          galeriRef,
+          where("thumbnail", "==", true),
+          orderBy("created_at", "desc"),
+          limit(PAGE_SIZE * 5) // ambil lebih banyak, misalnya 60 dokumen
+        );
+
+        if (!reset && lastDoc) {
+          galeriQuery = query(
+            galeriRef,
+            where("thumbnail", "==", true),
+            orderBy("created_at", "desc"),
+            startAfter(lastDoc),
+            limit(PAGE_SIZE * 5)
+          );
+        }
+
         const galeriSnap = await getDocs(galeriQuery);
+
+        if (galeriSnap.empty) {
+          console.log("⚠️ Tidak ada data lagi.");
+          setHasMore(false);
+          setLoading(false);
+          return;
+        }
 
         const galeriData = galeriSnap.docs.map((doc) => ({
           id: doc.id,
@@ -74,28 +113,62 @@ const Galeri = ({ role }) => {
 
           if (pekerjaanSnap.exists()) {
             const pekerjaan = pekerjaanSnap.data();
-            const createdYear = pekerjaan.created_at?.toDate().getFullYear();
 
-            // filter sesuai bagian dan tahun
+            // ambil tahun dari tanggal_pekerjaan
+            const tanggalPekerjaan = pekerjaan.tanggal_pekerjaan;
+            let pekerjaanYear = null;
+            if (tanggalPekerjaan) {
+              const parsedDate = new Date(tanggalPekerjaan);
+              if (!isNaN(parsedDate)) {
+                pekerjaanYear = parsedDate.getFullYear();
+              }
+            }
+
+            // cek bagian + filter tahun
             if (
               pekerjaan.bagian.toLowerCase() === bagianUser.toLowerCase() &&
-              (selectedYear === "all" || createdYear === Number(selectedYear))
+              (selectedYear === "all" || pekerjaanYear === Number(selectedYear))
             ) {
               filteredPhotos.push(g);
             }
           }
+
+          // stop kalau sudah dapat 12 data valid
+          if (filteredPhotos.length >= PAGE_SIZE) break;
         }
 
-        setPhotos(filteredPhotos);
+        console.log(`📂 Batch Firestore: ${galeriData.length} dokumen`);
+        console.log("Data Galeri", galeriData);
+        console.log(
+          `📊 Foto valid sesuai bagian "${bagianUser}": ${filteredPhotos.length}`
+        );
+
+        if (reset) {
+          setPhotos(filteredPhotos);
+        } else {
+          setPhotos((prev) => [...prev, ...filteredPhotos]);
+        }
+
+        // Simpan lastDoc (tetap dari snapshot asli, bukan yang terfilter)
+        setLastDoc(galeriSnap.docs[galeriSnap.docs.length - 1]);
+        setHasMore(galeriSnap.docs.length === PAGE_SIZE * 5);
       } catch (err) {
         console.error("❌ Gagal fetch galeri:", err);
       } finally {
         setLoading(false);
       }
-    };
+    },
+    [lastDoc, role, selectedYear]
+  );
 
-    fetchPhotos();
-  }, [role, selectedYear]);
+  // reset data kalau tahun berubah
+  useEffect(() => {
+    fetchPhotos(true);
+  }, [fetchPhotos]);
+
+  useEffect(() => {
+    fetchYears();
+  }, [fetchYears]);
 
   const placeholders = Array.from({ length: 10 }, (_, i) => i);
   const bagianUser = roleToBagian[role];
@@ -111,7 +184,7 @@ const Galeri = ({ role }) => {
           <select
             value={selectedYear}
             onChange={(e) => setSelectedYear(e.target.value)}
-            className="z-10 bg-transparent text-xl font-bold pr-12 text-orange-400 border-0  focus:outline-none focus:border-orange-500 transition-colors duration-200 pb-1 appearance-none"
+            className="z-10 bg-transparent text-xl font-bold pr-12 text-orange-400 border-0 focus:outline-none focus:border-orange-500 transition-colors duration-200 pb-1 appearance-none"
           >
             <option value="all">Semua Tahun</option>
             {availableYears.map((year) => (
@@ -130,7 +203,7 @@ const Galeri = ({ role }) => {
 
       {/* Grid Galeri */}
       <div className="gallery grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {loading
+        {loading && photos.length === 0
           ? placeholders.map((i) => (
               <figure
                 key={`placeholder-${i}`}
@@ -166,6 +239,18 @@ const Galeri = ({ role }) => {
               </figure>
             ))}
       </div>
+
+      {/* Tombol Load More */}
+      {hasMore && !loading && (
+        <div className="flex justify-center mt-6">
+          <button
+            onClick={() => fetchPhotos(false)}
+            className="bg-orange-400 text-white px-6 py-2 rounded-lg shadow hover:bg-orange-500"
+          >
+            Load More
+          </button>
+        </div>
+      )}
 
       {/* Modal Zoom */}
       {zoomImageUrl && (
