@@ -229,54 +229,53 @@ const AdminPerusahaanListPage = () => {
     }
   };
 
- const exportToExcel = () => {
-  const data = getExportData().map((row) => ({
-    ID: row.id || "-",
-    "Nama Perusahaan": row.nama_perusahaan || "-",
-    Direktur: row.direktur || "-",
-    Alamat: row.alamat || "-",
-    Status: row.status || "-",
-    Dibuat: formatDate(row.created_at),
-  }));
+  const exportToExcel = () => {
+    const data = getExportData().map((row) => ({
+      ID: row.id || "-",
+      "Nama Perusahaan": row.nama_perusahaan || "-",
+      Direktur: row.direktur || "-",
+      Alamat: row.alamat || "-",
+      Status: row.status || "-",
+      Dibuat: formatDate(row.created_at),
+    }));
 
-  const worksheet = XLSX.utils.json_to_sheet(data);
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Perusahaan");
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Perusahaan");
 
-  const excelBuffer = XLSX.write(workbook, {
-    bookType: "xlsx",
-    type: "base64", // ⚠️ jangan array, pakai base64
-  });
-
-  const fileName = `DataPerusahaan_${getFormattedNow()}.xlsx`;
-
-  // Kalau jalan di WebView Android → lempar ke AndroidInterface
-  if (window.AndroidInterface) {
-    window.AndroidInterface.saveExcel(excelBuffer, fileName);
-  } else {
-    // fallback kalau di browser biasa
-    const blob = new Blob([s2ab(atob(excelBuffer))], {
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "base64", // ⚠️ jangan array, pakai base64
     });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+
+    const fileName = `DataPerusahaan_${getFormattedNow()}.xlsx`;
+
+    // Kalau jalan di WebView Android → lempar ke AndroidInterface
+    if (window.AndroidInterface) {
+      window.AndroidInterface.saveExcel(excelBuffer, fileName);
+    } else {
+      // fallback kalau di browser biasa
+      const blob = new Blob([s2ab(atob(excelBuffer))], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  // helper untuk convert string → ArrayBuffer (fallback download)
+  function s2ab(s) {
+    const buf = new ArrayBuffer(s.length);
+    const view = new Uint8Array(buf);
+    for (let i = 0; i < s.length; i++) view[i] = s.charCodeAt(i) & 0xff;
+    return buf;
   }
-};
-
-// helper untuk convert string → ArrayBuffer (fallback download)
-function s2ab(s) {
-  const buf = new ArrayBuffer(s.length);
-  const view = new Uint8Array(buf);
-  for (let i = 0; i < s.length; i++) view[i] = s.charCodeAt(i) & 0xff;
-  return buf;
-}
-
 
   const columns = [
     {
@@ -488,18 +487,18 @@ function s2ab(s) {
 
         {showModalPekerjaan && selectedPerusahaan && (
           <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
-            <div className="bg-white rounded-lg shadow-lg w-full max-w-5xl relative">
-              <div className="flex gap-5">
+            <div className="bg-white rounded-lg shadow-lg w-11/12 max-w-md md:max-w-5xl relative p-4">
+              <div className="flex flex-col md:flex-row gap-5">
                 {selectedPerusahaan.foto_kantor.secure_url && (
                   <div
-                    className="h-[400px] w-1/2 rounded border bg-center bg-cover bg-no-repeat"
+                    className="h-[250px] md:h-[400px] w-full md:w-1/2 rounded border bg-center bg-cover bg-no-repeat"
                     style={{
                       backgroundImage: `url(${selectedPerusahaan.foto_kantor.secure_url})`,
                     }}
                   />
                 )}
 
-                <div className="py-8 w-1/2 h-full mb-12 pr-8 flex items-start ">
+                <div className="py-8 w-full md:w-1/2 h-full mb-12 pr-8 flex items-start relative">
                   <button
                     onClick={() => setShowModalPekerjaan(false)}
                     className="absolute top-2 right-2 text-gray-600 hover:text-black text-xl font-bold"
@@ -523,18 +522,6 @@ function s2ab(s) {
                     </p>
                     <p>
                       <strong>Status:</strong> {selectedPerusahaan.status}
-                    </p>
-                    <p>
-                      <strong>Dibuat:</strong>{" "}
-                      {new Date(
-                        selectedPerusahaan.created_at?.seconds * 1000
-                      ).toLocaleString()}
-                    </p>
-                    <p>
-                      <strong>Diperbarui:</strong>{" "}
-                      {new Date(
-                        selectedPerusahaan.updated_at?.seconds * 1000
-                      ).toLocaleString()}
                     </p>
                   </div>
                 </div>

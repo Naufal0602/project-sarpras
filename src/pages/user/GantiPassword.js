@@ -4,15 +4,14 @@ import Navbar from "../../components/template/Navbar";
 import Loading from "../../components/Loading";
 import GantiPassword from "../../components/GantiPassword";
 export default function UbahPassword() {
-
   const [loading, setLoading] = useState(false);
-console.log(setLoading)
+  console.log(setLoading);
   if (loading) {
-    return <Loading text="Memuat..." />;
+    return <Loading text="Loading..." />;
   }
 
   if (loading) {
-    return <Loading text="Memuat..." />;
+    return <Loading text="Loading..." />;
   }
 
   return (

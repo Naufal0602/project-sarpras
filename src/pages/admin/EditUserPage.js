@@ -47,7 +47,7 @@ const EditUserPage = () => {
   };
 
   if (loading) {
-    return <Loading text="Memuat..." />;
+    return <Loading text="Loading..." />;
   }
 
   return (

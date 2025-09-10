@@ -5,11 +5,10 @@ import Loading from "../../components/Loading";
 import GantiPassword from "../../components/GantiPassword";
 
 export default function UbahPassword() {
-
   const [loading, setLoading] = useState(false);
-console.log(setLoading)
+  console.log(setLoading);
   if (loading) {
-    return <Loading text="Memuat..." />;
+    return <Loading text="Loading..." />;
   }
 
   return (
@@ -19,7 +18,7 @@ console.log(setLoading)
         <Sidebar />
       </div>
       <div className="flex-1 lg:ml-64 pt-16 flex justify-center items-center">
-        <GantiPassword/>
+        <GantiPassword />
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { uploadToCloudinary } from "../../../services/cloudinaryService";
 import { db } from "../../../services/firebase";
@@ -36,6 +36,15 @@ export default function TambahPekerjaanFisikDanUpload() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  // --- CAMERA STATE ---
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [cameraMode, setCameraMode] = useState("environment");
+  const [photoTaken, setPhotoTaken] = useState(false);
+
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
+
+  // ambil role user
   useEffect(() => {
     const fetchUserBagian = async () => {
       const auth = getAuth();
@@ -71,13 +80,66 @@ export default function TambahPekerjaanFisikDanUpload() {
     fetchPerusahaan();
   }, []);
 
+  // --- CAMERA FUNCTION ---
+  const startCamera = async (mode = cameraMode) => {
+    try {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((t) => t.stop());
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: mode, width: { ideal: 640 }, height: { ideal: 480 } },
+      });
+      streamRef.current = stream;
+      videoRef.current.srcObject = stream;
+    } catch (err) {
+      console.error("Tidak bisa akses kamera:", err);
+      alert("Gagal membuka kamera!");
+    }
+  };
+
+  const toggleCamera = async () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+    }
+    setCameraMode((prev) => {
+      const newMode = prev === "user" ? "environment" : "user";
+      setTimeout(() => startCamera(newMode), 200);
+      return newMode;
+    });
+  };
+
+  const takePhoto = async () => {
+    try {
+      const track = streamRef.current.getVideoTracks()[0];
+      const imageCapture = new ImageCapture(track);
+      const photoBlob = await imageCapture.takePhoto();
+      const photoFile = new File([photoBlob], `camera-${Date.now()}.jpg`, {
+        type: "image/jpeg",
+      });
+      const photoUrl = URL.createObjectURL(photoBlob);
+
+      setFiles((prev) => [...prev, photoFile]);
+      setPreviewUrls((prev) => [...prev, photoUrl]);
+
+      setPhotoTaken(true);
+      setTimeout(() => setPhotoTaken(false), 1200);
+    } catch (err) {
+      console.error("Gagal ambil foto:", err);
+      alert("Tidak bisa ambil foto.");
+    }
+  };
+
+  const removeFile = (index) => {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
+    setPreviewUrls((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // --- SUBMIT ---
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
       setLoading(true);
 
-      // 1. Simpan pekerjaan fisik dulu
       const pekerjaanRef = await addDoc(collection(db, "pekerjaan_fisik"), {
         perusahaan_id: perusahaanId,
         jenis_pekerjaan: jenisPekerjaan,
@@ -91,7 +153,6 @@ export default function TambahPekerjaanFisikDanUpload() {
 
       const pekerjaanId = pekerjaanRef.id;
 
-      // 2. Cek apakah pekerjaan ini sudah punya thumbnail
       const q = query(
         collection(db, "galeri"),
         where("id_pekerjaan", "==", pekerjaanId),
@@ -100,7 +161,6 @@ export default function TambahPekerjaanFisikDanUpload() {
       const snapshot = await getDocs(q);
       let hasThumbnail = !snapshot.empty;
 
-      // 3. Upload gambar ke Cloudinary + simpan ke koleksi galeri
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         const result = await uploadToCloudinary(file);
@@ -123,11 +183,13 @@ export default function TambahPekerjaanFisikDanUpload() {
     } finally {
       setLoading(false);
       setSuccessToast(true);
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((t) => t.stop());
+      }
     }
   };
-  if (loading) {
-    return <Loading text="Menyimpan..." />;
-  }
+
+  if (loading) return <Loading text="Menyimpan..." />;
 
   return (
     <>
@@ -153,7 +215,7 @@ export default function TambahPekerjaanFisikDanUpload() {
               Tambah Pekerjaan Fisik & Upload Gambar
             </h2>
 
-            {/* --- FORM PEKERJAAN --- */}
+            {/* FORM */}
             <label className="block mb-3">
               <span className="font-medium">Perusahaan</span>
               <Select
@@ -218,7 +280,7 @@ export default function TambahPekerjaanFisikDanUpload() {
               />
             </label>
 
-            {/* --- UPLOAD GAMBAR --- */}
+            {/* UPLOAD GAMBAR */}
             <label className="block mb-3">
               <span className="font-medium">Pilih Gambar</span>
               <input
@@ -227,22 +289,42 @@ export default function TambahPekerjaanFisikDanUpload() {
                 multiple
                 onChange={(e) => {
                   const selected = Array.from(e.target.files);
-                  setFiles(selected);
-                  setPreviewUrls(selected.map((f) => URL.createObjectURL(f)));
+                  setFiles((prev) => [...prev, ...selected]);
+                  setPreviewUrls((prev) => [
+                    ...prev,
+                    ...selected.map((f) => URL.createObjectURL(f)),
+                  ]);
                 }}
                 className="mt-1 block w-full border rounded px-2 py-1"
               />
+              <button
+                type="button"
+                onClick={() => {
+                  setCameraOpen(true);
+                  setTimeout(() => startCamera(), 300);
+                }}
+                className="w-full bg-blue-500 text-white py-2 px-4 rounded-md mt-2"
+              >
+                Buka Kamera
+              </button>
             </label>
 
             {previewUrls.length > 0 && (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4">
                 {previewUrls.map((url, idx) => (
-                  <div key={idx} className="border rounded overflow-hidden">
+                  <div key={idx} className="relative border rounded overflow-hidden">
                     <img
                       src={url}
                       alt={`Preview ${idx}`}
                       className="w-full h-28 object-cover"
                     />
+                    <button
+                      type="button"
+                      onClick={() => removeFile(idx)}
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs"
+                    >
+                      ✕
+                    </button>
                     <p className="text-xs text-center p-1 truncate">
                       {files[idx]?.name}
                     </p>
@@ -252,9 +334,7 @@ export default function TambahPekerjaanFisikDanUpload() {
             )}
 
             <label className="block mb-4">
-              <span className="font-medium">
-                Keterangan (untuk semua gambar)
-              </span>
+              <span className="font-medium">Keterangan (untuk semua gambar)</span>
               <input
                 type="text"
                 value={keterangan}
@@ -281,6 +361,57 @@ export default function TambahPekerjaanFisikDanUpload() {
           </form>
         </div>
       </div>
+
+      {/* MODAL KAMERA */}
+      {cameraOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 text-center">
+            <h2 className="text-lg font-semibold mb-4">Ambil Foto</h2>
+            <video
+              ref={videoRef}
+              className={`w-full aspect-[4/3] bg-black rounded-md mb-4 object-cover ${
+                cameraMode === "user" ? "scale-x-[-1]" : ""
+              }`}
+              autoPlay
+              muted
+            />
+            {photoTaken && (
+              <div className="text-green-600 font-semibold mb-2 animate-pulse">
+                ✅ Gambar berhasil diambil
+              </div>
+            )}
+            <div className="flex gap-2 justify-center">
+              <button
+                type="button"
+                onClick={takePhoto}
+                className="flex-1 bg-green-500 text-white py-2 px-4 rounded-md"
+              >
+                Ambil Foto
+              </button>
+              <button
+                type="button"
+                onClick={toggleCamera}
+                className="flex-1 bg-yellow-500 text-white py-2 px-4 rounded-md"
+              >
+                Ganti Kamera
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (streamRef.current) {
+                    streamRef.current.getTracks().forEach((t) => t.stop());
+                  }
+                  setCameraOpen(false);
+                }}
+                className="flex-1 bg-red-500 text-white py-2 px-4 rounded-md"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
+export { TambahPekerjaanFisikDanUpload };

@@ -157,7 +157,7 @@ const EditPerusahaanPage = () => {
 
         <div className="flex flex-col items-center justify-center md:ml-72 pt-20 p-8 w-full">
           {loading ? (
-            <Loading text="Menyimpan perubahan..." />
+            <Loading text="Loading..." />
           ) : (
             <form
               onSubmit={handleSubmit}

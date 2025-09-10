@@ -365,7 +365,7 @@ const AdminUserListPage = () => {
   ];
 
   if (loading) {
-    return <Loading text="Memuat..." />;
+    return <Loading text="Loading..." />;
   }
 
   return (
@@ -615,17 +615,17 @@ const AdminUserListPage = () => {
         />
 
         <ConfirmModal
-                  title="Hapus Pekerjaan"
-                  message="Yakin ingin menghapus pekerjaan ini? Semua data terkait akan dihapus."
-                  open={openModal}
-                  onClose={() => setOpenModal(false)}
-                  onConfirm={() => {
-                    if (selectedUserId) {
-                      handleDelete(selectedUserId);
-                      setOpenModal(false);
-                    }
-                  }}
-            />
+          title="Hapus Pekerjaan"
+          message="Yakin ingin menghapus pekerjaan ini? Semua data terkait akan dihapus."
+          open={openModal}
+          onClose={() => setOpenModal(false)}
+          onConfirm={() => {
+            if (selectedUserId) {
+              handleDelete(selectedUserId);
+              setOpenModal(false);
+            }
+          }}
+        />
       </div>
     </div>
   );
