@@ -38,7 +38,6 @@ const ImportPekerjaanFisikPage = () => {
 
     setUploading(true);
 
-
     try {
       for (const row of excelData) {
         // 1. Simpan pekerjaan fisik
@@ -61,6 +60,8 @@ const ImportPekerjaanFisikPage = () => {
           url_gambar: row["secure_url"] || "", // kalau kosong tetap tersimpan ""
           public_id: row["public_id"] || "",
           keterangan: row["keterangan"] || "",
+          bagian: (row["Bagian"] || "-").toLowerCase(),
+          tanggal_pekerjaan: row["Mulai"] || null,
           created_at: serverTimestamp(),
           thumbnail: true, // defaultin satu jadi thumbnail
         });

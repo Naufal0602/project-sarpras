@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { uploadToCloudinary } from "../../../services/cloudinaryService";
 import { db } from "../../../services/firebase";
@@ -9,11 +9,14 @@ import {
   getDocs,
   query,
   where,
+  doc,
+  getDoc,
 } from "firebase/firestore";
 import Navbar from "../../../components/template/Navbar";
 import Sidebar from "../../../components/template/SideBar";
 import Loading from "../../../components/Loading";
 import SuccessFullScreen from "../../../components/Success";
+import { getAuth } from "firebase/auth";
 
 export default function UploadForm() {
   const { id } = useParams();
@@ -25,11 +28,104 @@ export default function UploadForm() {
   const [successToast, setSuccessToast] = useState(false);
   const [previewUrls, setPreviewUrls] = useState([]);
   const [cameraOpen, setCameraOpen] = useState(false);
-  const [photoTaken, setPhotoTaken] = useState(false); // ✅ status notif ambil foto
+  const [photoTaken, setPhotoTaken] = useState(false);
+  const [bagian, setBagian] = useState(""); // 🔥 role user
 
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const [cameraMode, setCameraMode] = useState("environment");
+
+  // ambil role user saat mount
+  useEffect(() => {
+    const fetchUserBagian = async () => {
+      try {
+        const auth = getAuth();
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+          const userDocRef = doc(db, "users", currentUser.uid);
+          const userSnap = await getDoc(userDocRef);
+          if (userSnap.exists()) {
+            const userData = userSnap.data();
+            if (userData.role && userData.role.startsWith("user-")) {
+              setBagian(userData.role.replace("user-", "")); // contoh: "sd"
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Gagal fetch bagian user:", err);
+      }
+    };
+    fetchUserBagian();
+  }, []);
+
+  // 🚀 Upload ke Cloudinary + Firestore
+  // 🚀 Upload ke Cloudinary + Firestore
+  const handleUpload = async () => {
+    if (!files.length) {
+      alert("Pilih minimal satu gambar.");
+      return;
+    }
+
+    if (!bagian) {
+      alert("Data bagian belum siap, coba beberapa detik lagi.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // 🔥 ambil tanggal_pekerjaan dari pekerjaan_fisik
+      const pekerjaanRef = doc(db, "pekerjaan_fisik", id);
+      const pekerjaanSnap = await getDoc(pekerjaanRef);
+
+      if (!pekerjaanSnap.exists()) {
+        alert("Data pekerjaan tidak ditemukan.");
+        setLoading(false);
+        return;
+      }
+
+      const { tanggal_pekerjaan } = pekerjaanSnap.data();
+
+      // cek apakah sudah ada thumbnail
+      const q = query(
+        collection(db, "galeri"),
+        where("id_pekerjaan", "==", id),
+        where("thumbnail", "==", true)
+      );
+      const snapshot = await getDocs(q);
+      let hasThumbnail = !snapshot.empty;
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const result = await uploadToCloudinary(file);
+        const { secure_url, public_id } = result;
+
+        console.log("bagian yang akan disimpan:", bagian);
+
+        await addDoc(collection(db, "galeri"), {
+          id_pekerjaan: id,
+          url_gambar: secure_url,
+          public_id,
+          keterangan,
+          created_at: serverTimestamp(),
+          thumbnail: hasThumbnail ? false : true,
+          bagian,
+          tanggal_pekerjaan: tanggal_pekerjaan || null, // ✅ ikut disimpan
+        });
+
+        if (!hasThumbnail) hasThumbnail = true;
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Gagal upload satu atau lebih gambar.");
+    } finally {
+      setSuccessToast(true);
+      setLoading(false);
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((t) => t.stop());
+      }
+    }
+  };
 
   // 🎥 buka kamera
   const startCamera = async (mode = cameraMode) => {
@@ -37,12 +133,11 @@ export default function UploadForm() {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
       }
-
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: mode,
-          width: { ideal: 640 }, // resolusi lebih kecil
-          height: { ideal: 480 }, // resolusi lebih kecil
+          width: { ideal: 640 },
+          height: { ideal: 480 },
         },
       });
       streamRef.current = stream;
@@ -55,20 +150,12 @@ export default function UploadForm() {
 
   const toggleCamera = async () => {
     try {
-      // stop stream lama dulu
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
       }
-
-      // ubah mode kamera
       setCameraMode((prev) => {
         const newMode = prev === "user" ? "environment" : "user";
-
-        // tunggu state update lalu buka ulang kamera
-        setTimeout(() => {
-          startCamera(newMode);
-        }, 200);
-
+        setTimeout(() => startCamera(newMode), 200);
         return newMode;
       });
     } catch (err) {
@@ -77,7 +164,6 @@ export default function UploadForm() {
     }
   };
 
-  // 📸 ambil foto dari video -> canvas
   const takePhoto = async () => {
     try {
       const track = streamRef.current.getVideoTracks()[0];
@@ -92,7 +178,6 @@ export default function UploadForm() {
       setFiles((prev) => [...prev, photoFile]);
       setPreviewUrls((prev) => [...prev, photoUrl]);
 
-      // tampilkan notifikasi sebentar
       setPhotoTaken(true);
       setTimeout(() => setPhotoTaken(false), 1200);
     } catch (err) {
@@ -101,13 +186,11 @@ export default function UploadForm() {
     }
   };
 
-  // ❌ hapus gambar dari preview
   const removeFile = (index) => {
     setFiles((prev) => prev.filter((_, i) => i !== index));
     setPreviewUrls((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // 📂 pilih file manual
   const handleFileChange = (e) => {
     const selected = Array.from(e.target.files);
     setFiles((prev) => [...prev, ...selected]);
@@ -115,51 +198,6 @@ export default function UploadForm() {
       ...prev,
       ...selected.map((file) => URL.createObjectURL(file)),
     ]);
-  };
-
-  // 🚀 Upload ke Cloudinary + Firestore
-  const handleUpload = async () => {
-    if (!files.length) {
-      alert("Pilih minimal satu gambar.");
-      return;
-    }
-
-    try {
-      setLoading(true);
-
-      const q = query(
-        collection(db, "galeri"),
-        where("id_pekerjaan", "==", id),
-        where("thumbnail", "==", true)
-      );
-      const snapshot = await getDocs(q);
-      let hasThumbnail = !snapshot.empty;
-
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const result = await uploadToCloudinary(file);
-        const { secure_url, public_id } = result;
-
-        await addDoc(collection(db, "galeri"), {
-          id_pekerjaan: id,
-          url_gambar: secure_url,
-          public_id: public_id,
-          keterangan: keterangan,
-          created_at: serverTimestamp(),
-          thumbnail: hasThumbnail ? false : true,
-        });
-
-        if (!hasThumbnail) hasThumbnail = true;
-      }
-    } catch (err) {
-      alert("Gagal upload satu atau lebih gambar.");
-    } finally {
-      setSuccessToast(true);
-      setLoading(false);
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((t) => t.stop());
-      }
-    }
   };
 
   if (loading) {
@@ -195,7 +233,6 @@ export default function UploadForm() {
               onChange={handleFileChange}
               className="mt-1 block w-full text-sm text-gray-700 border border-gray-300 rounded-md cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
             />
-
             <button
               type="button"
               onClick={() => {
@@ -208,7 +245,6 @@ export default function UploadForm() {
             </button>
           </label>
 
-          {/* PREVIEW */}
           {previewUrls?.length > 0 && (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4">
               {previewUrls.map((url, idx) => (
@@ -262,13 +298,10 @@ export default function UploadForm() {
         </div>
       </div>
 
-      {/* MODAL KAMERA */}
       {cameraOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 text-center">
             <h2 className="text-lg font-semibold mb-4">Ambil Foto</h2>
-
-            {/* PREVIEW VIDEO */}
             <video
               ref={videoRef}
               className={`w-full aspect-[4/3] bg-black rounded-md mb-4 object-cover ${
@@ -277,14 +310,11 @@ export default function UploadForm() {
               autoPlay
               muted
             />
-
-            {/* NOTIFIKASI BERHASIL */}
             {photoTaken && (
               <div className="text-green-600 font-semibold mb-2 animate-pulse">
                 ✅ Gambar berhasil diambil
               </div>
             )}
-
             <div className="flex gap-2 justify-center">
               <button
                 onClick={takePhoto}

@@ -290,7 +290,6 @@ const AdminPerusahaanListPage = () => {
     {
       name: "Alamat",
       selector: (row) => row.alamat || "-",
-      grow: 2,
     },
     {
       name: "Status",
@@ -423,7 +422,7 @@ const AdminPerusahaanListPage = () => {
       </div>
 
       {/* Konten utama */}
-      <div className="flex-1 md:ml-72 pt-20 p-8 w-full">
+      <div className="flex-1 md:ml-72 pt-20 p-8 max-w-6xl">
         <div className="xl:flex sm:flex-row xl:justify-between mb-4">
           <h2 className="text-2xl font-bold mb-6 text-orange-600">
             Daftar Perusahaan
@@ -473,17 +472,19 @@ const AdminPerusahaanListPage = () => {
             />
           </div>
         </div>
-
-        <DataTable
-          columns={columns}
-          data={filteredData}
-          progressPending={loading}
-          progressComponent={<Loading />}
-          pagination
-          highlightOnHover
-          responsive
-          noDataComponent="Belum ada data perusahaan"
-        />
+        {/* Table */}
+        <div className="w-full overflow-x-auto">
+          <DataTable
+            columns={columns}
+            data={filteredData}
+            progressPending={loading}
+            progressComponent={<Loading />}
+            pagination
+            highlightOnHover
+            responsive={false} // jangan auto wrap, biar scroll
+            noDataComponent="Belum ada data perusahaan"
+          />
+        </div>
 
         {showModalPekerjaan && selectedPerusahaan && (
           <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">

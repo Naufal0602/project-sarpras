@@ -2,12 +2,10 @@ import React, { useEffect, useState } from "react";
 import {
   collection,
   getDocs,
-  doc,
-  getDoc,
   query,
+  where,
   limit,
 } from "firebase/firestore";
-
 import { db } from "../services/firebase";
 import { useNavigate } from "react-router-dom";
 import "./styles/Galeri.css";
@@ -29,31 +27,27 @@ const GaleriDashboard = ({ role }) => {
   useEffect(() => {
     const fetchPhotos = async () => {
       try {
-        const galeriQuery = query(collection(db, "galeri"), limit(10));
+        const bagianUser = roleToBagian[role];
+        if (!bagianUser) {
+          console.warn("Role tidak dikenali:", role);
+          setLoading(false);
+          return;
+        }
+
+        // langsung filter ke Firestore pakai bagian
+        const galeriQuery = query(
+          collection(db, "galeri"),
+          where("bagian", "==", bagianUser),
+          limit(10)
+        );
+
         const galeriSnap = await getDocs(galeriQuery);
         const galeriData = galeriSnap.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         }));
 
-        const bagianUser = roleToBagian[role];
-
-        const filteredPhotos = [];
-        for (const g of galeriData) {
-          if (!g.id_pekerjaan) continue;
-
-          const pekerjaanRef = doc(db, "pekerjaan_fisik", g.id_pekerjaan);
-          const pekerjaanSnap = await getDoc(pekerjaanRef);
-
-          if (pekerjaanSnap.exists()) {
-            const pekerjaan = pekerjaanSnap.data();
-            if (pekerjaan.bagian === bagianUser) {
-              filteredPhotos.push(g);
-            }
-          }
-        }
-
-        setPhotos(filteredPhotos);
+        setPhotos(galeriData);
       } catch (err) {
         console.error("❌ Gagal fetch galeri:", err);
       } finally {
@@ -85,6 +79,7 @@ const GaleriDashboard = ({ role }) => {
           </div>
         )}
       </div>
+
       <div className="gallery">
         {loading
           ? placeholders.map((i) => (
@@ -93,7 +88,7 @@ const GaleriDashboard = ({ role }) => {
                 className="bg-gray-200 animate-pulse"
               />
             ))
-          : photos.slice(0, 10).map((photo) => (
+          : photos.map((photo) => (
               <figure key={photo.id} className="relative group">
                 <img src={photo.url_gambar} alt={photo.keterangan} />
                 <figcaption>
@@ -117,7 +112,7 @@ const GaleriDashboard = ({ role }) => {
             ))}
       </div>
 
-      {/* Tombol Lihat Semua */}
+      {/* Modal zoom */}
       {zoomImageUrl && (
         <div
           className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50"

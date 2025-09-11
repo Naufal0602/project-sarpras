@@ -173,6 +173,7 @@ export default function TambahPekerjaanFisikDanUpload() {
           keterangan,
           created_at: serverTimestamp(),
           thumbnail: hasThumbnail ? false : true,
+          bagian,
         });
 
         if (!hasThumbnail) hasThumbnail = true;
