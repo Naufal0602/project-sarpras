@@ -114,7 +114,7 @@ const UserDashboard = () => {
   // Main dashboard render
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <div className="fixed">
+      <div className="fixed z-50">
         <Navbar />
         <Sidebar />
       </div>

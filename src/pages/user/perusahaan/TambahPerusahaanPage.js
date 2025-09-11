@@ -131,7 +131,7 @@ const TambahPerusahaanPage = () => {
 
       <div className="flex min-h-screen bg-gray-50">
         {/* Sidebar dan Navbar */}
-        <div className="fixed">
+        <div className="fixed z-50">
           <AdminNavbar />
           <Sidebar />
         </div>

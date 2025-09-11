@@ -150,7 +150,7 @@ const EditPerusahaanPage = () => {
       />
 
       <div className="flex min-h-screen bg-gray-50">
-        <div className="fixed">
+        <div className="fixed z-50">
           <AdminNavbar />
           <Sidebar />
         </div>
