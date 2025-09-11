@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { collection, getDocs, doc, getDoc } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  doc,
+  getDoc,
+  query,
+  limit,
+} from "firebase/firestore";
+
 import { db } from "../services/firebase";
 import { useNavigate } from "react-router-dom";
 import "./styles/Galeri.css";
@@ -21,7 +29,8 @@ const GaleriDashboard = ({ role }) => {
   useEffect(() => {
     const fetchPhotos = async () => {
       try {
-        const galeriSnap = await getDocs(collection(db, "galeri"));
+        const galeriQuery = query(collection(db, "galeri"), limit(10));
+        const galeriSnap = await getDocs(galeriQuery);
         const galeriData = galeriSnap.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
@@ -114,7 +123,9 @@ const GaleriDashboard = ({ role }) => {
           className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50"
           onClick={() => setZoomImageUrl(null)}
         >
-          <div className="relative max-w-5xl w-full p-4" onClick={(e) => e.stopPropagation()}
+          <div
+            className="relative max-w-5xl w-full p-4"
+            onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={() => setZoomImageUrl(null)}
