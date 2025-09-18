@@ -2,31 +2,18 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import AdminSidebar from "../../components/template/AdminSideBar";
 import AdminNavbar from "../../components/template/AdminNavBar";
-import { Users, Clock, CalendarDays, Timer, ShieldUser, BarChart } from "lucide-react";
+import { Users, Clock, CalendarDays, Timer, ShieldUser} from "lucide-react";
 
 // Firebase
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../services/firebase";
 
-// Recharts
-import {
-  BarChart as ReBarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-  ResponsiveContainer,
-} from "recharts";
 
 const ADMINDashboard = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [userTotal, setUserTotal] = useState(0);
   const [pendingUsers, setPendingUsers] = useState(0);
 
-  // state pekerjaan fisik
-  const [jobStats, setJobStats] = useState({ monthly: [], yearly: [] });
-  const [filterType, setFilterType] = useState("month"); // "month" atau "year"
 
   useEffect(() => {
     const fetchData = async () => {
@@ -61,11 +48,6 @@ const ADMINDashboard = () => {
           if (!jobsDataYearly[yearKey])
             jobsDataYearly[yearKey] = { year: yearKey, count: 0 };
           jobsDataYearly[yearKey].count++;
-        });
-
-        setJobStats({
-          monthly: Object.values(jobsDataMonthly),
-          yearly: Object.values(jobsDataYearly),
         });
       } catch (err) {
         console.error("Gagal ambil data:", err);
