@@ -66,7 +66,7 @@ const Sidebar = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex fixed h-screen bg-gray-50 z-50">
       {/* Mobile Menu Button */}
       <button
         onClick={toggleSidebar}

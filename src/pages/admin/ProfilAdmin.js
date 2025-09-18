@@ -123,7 +123,7 @@ const UserProfile = () => {
             </button>
             <Link
               to="/admin/ganti-password"
-              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg"
+              className="bg-red-500 hover:bg-red-600 text-white text-center px-4 py-2 rounded-lg"
             >
               Ganti Password
             </Link>
