@@ -422,7 +422,7 @@ const AdminPerusahaanListPage = () => {
       </div>
 
       {/* Konten utama */}
-      <div className="flex-1 md:ml-72 pt-20 p-8 max-w-6xl">
+      <div className="flex-1 md:ml-72 pt-20 p-8 w-full max-w-6xl">
         <div className="xl:flex sm:flex-row xl:justify-between mb-4">
           <h2 className="text-2xl font-bold mb-6 text-orange-600">
             Daftar Perusahaan
